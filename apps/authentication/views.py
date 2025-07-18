@@ -165,10 +165,11 @@ def signup_view(request):
     """Register new user."""
     serializer = UserSignupSerializer(data=request.data)
     if serializer.is_valid():
-        # Check if email is verified
+        # Check if email/mobile are verified (optional for testing)
         email = serializer.validated_data['email']
         mobile = serializer.validated_data.get('mobile')
         
+        # Check verification status but don't make it mandatory
         email_verified = OTPVerification.objects.filter(
             email=email, otp_type='email', is_verified=True
         ).exists()
@@ -179,17 +180,8 @@ def signup_view(request):
                 mobile=mobile, otp_type='mobile', is_verified=True
             ).exists()
         
-        if not email_verified:
-            return Response({
-                'success': False,
-                'message': 'Please verify your email first'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        if mobile and not mobile_verified:
-            return Response({
-                'success': False,
-                'message': 'Please verify your mobile number first'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # REMOVED MANDATORY VERIFICATION CONDITIONS FOR TESTING
+        # Users can signup without verification, but verification status is tracked
         
         # Create user
         user = serializer.save()

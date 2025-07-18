@@ -16,8 +16,14 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-railway-default-key-c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# ALLOWED_HOSTS configuration for Railway
-ALLOWED_HOSTS = ['*']  # Railway handles domain routing
+# ALLOWED_HOSTS configuration for deployment
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Render domains
+    '.railway.app',   # Railway domains (keeping for compatibility)
+    '*'  # Fallback for other deployments
+]
 
 # Application definition
 DJANGO_APPS = [
