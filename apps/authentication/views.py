@@ -17,6 +17,8 @@ from .utils import (
     create_otp_verification, verify_otp,
     send_email_otp, send_mobile_otp
 )
+import logging
+from django.conf import settings
 
 
 @extend_schema(
@@ -163,46 +165,58 @@ def verify_mobile_otp_view(request):
 @permission_classes([AllowAny])
 def signup_view(request):
     """Register new user."""
-    serializer = UserSignupSerializer(data=request.data)
-    if serializer.is_valid():
-        # Check if email/mobile are verified (optional for testing)
-        email = serializer.validated_data['email']
-        mobile = serializer.validated_data.get('mobile')
-        
-        # Check verification status but don't make it mandatory
-        email_verified = OTPVerification.objects.filter(
-            email=email, otp_type='email', is_verified=True
-        ).exists()
-        
-        mobile_verified = True  # Default to True if no mobile provided
-        if mobile:
-            mobile_verified = OTPVerification.objects.filter(
-                mobile=mobile, otp_type='mobile', is_verified=True
+    try:
+        serializer = UserSignupSerializer(data=request.data)
+        if serializer.is_valid():
+            # Check if email/mobile are verified (optional for testing)
+            email = serializer.validated_data['email']
+            mobile = serializer.validated_data.get('mobile')
+            
+            # Check verification status but don't make it mandatory
+            email_verified = OTPVerification.objects.filter(
+                email=email, otp_type='email', is_verified=True
             ).exists()
-        
-        # REMOVED MANDATORY VERIFICATION CONDITIONS FOR TESTING
-        # Users can signup without verification, but verification status is tracked
-        
-        # Create user
-        user = serializer.save()
-        user.is_email_verified = email_verified
-        user.is_mobile_verified = mobile_verified
-        user.save()
-        
-        # Create token
-        token, created = Token.objects.get_or_create(user=user)
+            
+            mobile_verified = True  # Default to True if no mobile provided
+            if mobile:
+                mobile_verified = OTPVerification.objects.filter(
+                    mobile=mobile, otp_type='mobile', is_verified=True
+                ).exists()
+            
+            # REMOVED MANDATORY VERIFICATION CONDITIONS FOR TESTING
+            # Users can signup without verification, but verification status is tracked
+            
+            # Create user
+            user = serializer.save()
+            user.is_email_verified = email_verified
+            user.is_mobile_verified = mobile_verified
+            user.save()
+            
+            # Create token
+            token, created = Token.objects.get_or_create(user=user)
+            
+            return Response({
+                'success': True,
+                'user': UserSerializer(user).data,
+                'token': token.key
+            }, status=status.HTTP_201_CREATED)
         
         return Response({
-            'success': True,
-            'user': UserSerializer(user).data,
-            'token': token.key
-        }, status=status.HTTP_201_CREATED)
-    
-    return Response({
-        'success': False,
-        'message': 'Invalid data provided',
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
+            'success': False,
+            'message': 'Invalid data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        # Log the error for debugging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Signup error: {str(e)}")
+        
+        return Response({
+            'success': False,
+            'message': 'An error occurred during registration. Please try again.',
+            'error': str(e) if settings.DEBUG else 'Internal server error'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema(

@@ -39,15 +39,26 @@ class UserSignupSerializer(serializers.ModelSerializer):
         return value
     
     def validate_mobile(self, value):
-        if value and User.objects.filter(mobile=value).exists():
+        # Allow None/empty values
+        if not value:
+            return None
+            
+        # Check for existing mobile numbers only if value is provided
+        if User.objects.filter(mobile=value).exists():
             raise serializers.ValidationError("User with this mobile number already exists.")
         return value
     
     def create(self, validated_data):
         password = validated_data.pop('password')
+        email = validated_data['email']
+        
+        # Create user with email as username
         user = User.objects.create_user(
-            username=validated_data['email'],
-            **validated_data
+            username=email,
+            email=email,
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            mobile=validated_data.get('mobile', None)
         )
         user.set_password(password)
         user.save()
