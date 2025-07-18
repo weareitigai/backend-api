@@ -78,11 +78,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='postgresql://travel_partner_user:your_password_here@localhost:5432/travel_partner_db')
-    )
-}
+# Handle Railway deployment where DATABASE_URL might not be available initially
+DATABASE_URL = config('DATABASE_URL', default=None)
+
+if DATABASE_URL:
+    # Railway environment with DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
+    }
+else:
+    # Fallback for local development or when DATABASE_URL is not set
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='travel_partner_db'),
+            'USER': config('DB_USER', default='travel_partner_user'),
+            'PASSWORD': config('DB_PASSWORD', default='your_password_here'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.User'
