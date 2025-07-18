@@ -56,14 +56,29 @@ https://your-app-name.railway.app/api/
 https://your-app-name.railway.app/api/docs/
 ```
 
+## Health Check Endpoint:
+```
+https://your-app-name.railway.app/health/
+```
+This endpoint works without database connection and is used by Railway for health checks.
+
 ## Files Modified for Railway:
 - `requirements.txt` - Added dj-database-url, whitenoise, gunicorn
 - `config/settings.py` - Updated database config and static files
-- `railway.json` - Deployment configuration
+- `config/urls.py` - Added health check endpoint
+- `railway.json` - Deployment configuration with better Gunicorn settings
 - `.railwayignore` - Exclude frontend from deployment
 - `railway_migrate.py` - Migration script for after database setup
+- `check_deployment.py` - Deployment verification script
 
 ## Troubleshooting
+
+### ❌ Container starts then stops immediately
+**Problem**: Health check failures or configuration issues
+**Solution**: 
+- We've added a `/health/` endpoint that doesn't require database
+- Updated Gunicorn parameters for better stability
+- Check Railway logs for specific error messages
 
 ### ❌ "Connection refused" error during deployment
 **Problem**: Django tries to connect to database before PostgreSQL service is added
