@@ -58,10 +58,25 @@ python manage.py populate_sample_data
 
 # Create superuser (optional)
 echo "👤 Creating superuser (optional)..."
-read -p "Do you want to create a superuser? (y/N): " create_superuser
-if [[ $create_superuser =~ ^[Yy]$ ]]; then
-    python manage.py createsuperuser
-fi
+echo "Choose an option:"
+echo "1. Create from environment variables (.env file)"
+echo "2. Create interactively"
+echo "3. Skip"
+read -p "Enter your choice (1/2/3): " superuser_choice
+
+case $superuser_choice in
+    1)
+        echo "Creating superuser from environment variables..."
+        python manage.py create_superuser_from_env
+        ;;
+    2)
+        echo "Creating superuser interactively..."
+        python manage.py createsuperuser
+        ;;
+    *)
+        echo "Skipping superuser creation"
+        ;;
+esac
 
 echo ""
 echo "✅ Setup complete!"
