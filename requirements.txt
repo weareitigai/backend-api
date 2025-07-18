@@ -13,3 +13,6 @@ sendgrid==6.10.0
 django-filter==23.4
 drf-spectacular==0.26.5
 psycopg[binary]==3.2.9
+dj-database-url==2.1.0
+whitenoise==6.6.0
+gunicorn==21.2.0

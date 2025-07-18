@@ -1,0 +1,14 @@
+frontend/
+venv/
+node_modules/
+*.pyc
+__pycache__/
+.git/
+.gitignore
+*.md
+*.csv
+.env.example
+.env.template
+test_apis.py
+migrate_to_postgresql.sh
+setup.sh 
