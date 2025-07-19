@@ -53,3 +53,31 @@ class PartnerStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partner
         fields = ['completed_steps', 'is_verified']
+
+
+class BusinessDetailsResponseSerializer(serializers.Serializer):
+    """Serializer for business details response."""
+    success = serializers.BooleanField()
+    message = serializers.CharField(required=False)
+    data = BusinessDetailsSerializer()
+
+
+class LocationCoverageResponseSerializer(serializers.Serializer):
+    """Serializer for location and coverage response."""
+    success = serializers.BooleanField()
+    message = serializers.CharField(required=False)
+    data = LocationCoverageSerializer()
+
+
+class ToursServicesResponseSerializer(serializers.Serializer):
+    """Serializer for tours and services response."""
+    success = serializers.BooleanField()
+    message = serializers.CharField(required=False)
+    data = ToursServicesSerializer()
+
+
+class LegalBankingResponseSerializer(serializers.Serializer):
+    """Serializer for legal and banking response."""
+    success = serializers.BooleanField()
+    message = serializers.CharField(required=False)
+    data = LegalBankingSerializer()

@@ -27,6 +27,7 @@ ALLOWED_HOSTS = [
 
 # Application definition
 DJANGO_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,6 +42,8 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'drf_spectacular',
     'django_filters',
+    'import_export',
+    'admin_honeypot',
 ]
 
 LOCAL_APPS = [
@@ -174,6 +177,56 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API for travel partner platform with authentication and partner management',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+}
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Travel Partner Admin",
+    "site_header": "Travel Partner",
+    "site_brand": None, # Will default to site_header
+    "site_logo": None,  # Remove the logo
+    "login_logo": None,  # Optional: path to your login logo
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    "site_icon": None,
+    "welcome_sign": "Welcome to the Travel Partner Admin",
+    "copyright": "Travel Partner Ltd.",
+    "search_model": ["authentication.User", "partner.Partner"],
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Partner App", "app": "partner"},
+        {"model": "authentication.User"},
+    ],
+    "usermenu_links": [
+        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+        {"model": "authentication.User"}
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["authentication", "partner", "common"],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "authentication.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "partner.partner": "fas fa-handshake",
+        "partner.businessdetails": "fas fa-briefcase",
+        "partner.locationcoverage": "fas fa-map-marked-alt",
+        "partner.toursservices": "fas fa-route",
+        "partner.legalbanking": "fas fa-balance-scale",
+        "common.destination": "fas fa-globe-asia",
+        "common.language": "fas fa-language",
+        "common.tourtype": "fas fa-hiking",
+        "common.timezone": "fas fa-clock",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "show_ui_builder": True,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {"authentication.user": "collapsible", "auth.group": "vertical_tabs"},
 }
 
 # Email Configuration

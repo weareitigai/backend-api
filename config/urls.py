@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.http import JsonResponse
+from django.shortcuts import redirect
 
 def health_check(request):
     """Simple health check endpoint that doesn't require database."""
@@ -16,7 +17,17 @@ def health_check(request):
         'service': 'Travel Partner API'
     })
 
+def root_redirect(request):
+    """Redirect root URL to API documentation."""
+    return redirect('/api/docs/')
+
 urlpatterns = [
+    # Root URL redirect
+    path('', root_redirect, name='root'),
+    
+    # Admin Honeypot
+    path('admin/login/', include('admin_honeypot.urls')),
+    
     path('admin/', admin.site.urls),
     
     # Health check endpoint (no database required)

@@ -150,6 +150,13 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'date_joined']
 
 
+class UserAuthResponseSerializer(serializers.Serializer):
+    """Serializer for successful authentication responses."""
+    success = serializers.BooleanField()
+    user = UserSerializer()
+    token = serializers.CharField()
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for changing user password."""
     current_password = serializers.CharField(write_only=True)

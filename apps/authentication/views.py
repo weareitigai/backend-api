@@ -11,7 +11,7 @@ from .serializers import (
     SendMobileOTPSerializer, VerifyMobileOTPSerializer,
     UserSignupSerializer, UserLoginSerializer,
     ForgotPasswordSerializer, ResetPasswordSerializer,
-    UserSerializer, ChangePasswordSerializer
+    UserSerializer, ChangePasswordSerializer, UserAuthResponseSerializer
 )
 from .utils import (
     create_otp_verification, verify_otp,
@@ -159,7 +159,7 @@ def verify_mobile_otp_view(request):
 
 @extend_schema(
     request=UserSignupSerializer,
-    responses={201: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'user': UserSerializer, 'token': {'type': 'string'}}}}
+    responses={201: UserAuthResponseSerializer}
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -221,7 +221,7 @@ def signup_view(request):
 
 @extend_schema(
     request=UserLoginSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'user': UserSerializer, 'token': {'type': 'string'}}}}
+    responses={200: UserAuthResponseSerializer}
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])

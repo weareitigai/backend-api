@@ -32,3 +32,8 @@ class TimezoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timezone
         fields = ['id', 'name', 'offset']
+
+
+class DestinationResponseSerializer(serializers.Serializer):
+    """Serializer for destination autocomplete response."""
+    results = DestinationSerializer(many=True)

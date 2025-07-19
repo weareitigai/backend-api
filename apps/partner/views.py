@@ -6,7 +6,9 @@ from drf_spectacular.utils import extend_schema
 from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking
 from .serializers import (
     BusinessDetailsSerializer, LocationCoverageSerializer,
-    ToursServicesSerializer, LegalBankingSerializer, PartnerStatusSerializer
+    ToursServicesSerializer, LegalBankingSerializer, PartnerStatusSerializer,
+    BusinessDetailsResponseSerializer, LocationCoverageResponseSerializer,
+    ToursServicesResponseSerializer, LegalBankingResponseSerializer
 )
 
 
@@ -18,7 +20,7 @@ def get_or_create_partner(user):
 
 @extend_schema(
     request=BusinessDetailsSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}, 'data': BusinessDetailsSerializer}}}
+    responses={200: BusinessDetailsResponseSerializer}
 )
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -63,7 +65,7 @@ def business_details_view(request):
 
 @extend_schema(
     request=LocationCoverageSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}, 'data': LocationCoverageSerializer}}}
+    responses={200: LocationCoverageResponseSerializer}
 )
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -108,7 +110,7 @@ def location_coverage_view(request):
 
 @extend_schema(
     request=ToursServicesSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}, 'data': ToursServicesSerializer}}}
+    responses={200: ToursServicesResponseSerializer}
 )
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -153,7 +155,7 @@ def tours_services_view(request):
 
 @extend_schema(
     request=LegalBankingSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}, 'data': LegalBankingSerializer}}}
+    responses={200: LegalBankingResponseSerializer}
 )
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -186,7 +188,7 @@ def legal_banking_view(request):
             legal_banking = serializer.save(partner=partner)
             return Response({
                 'success': True,
-                'message': 'Legal and banking information updated successfully'
+                'message': 'Legal and banking details updated successfully'
             }, status=status.HTTP_200_OK)
         
         return Response({

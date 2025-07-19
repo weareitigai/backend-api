@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema
 from .models import Destination, Language, TourType, Timezone
 from .serializers import (
     DestinationSerializer, LanguageSerializer,
-    TourTypeSerializer, TimezoneSerializer
+    TourTypeSerializer, TimezoneSerializer, DestinationResponseSerializer
 )
 
 
@@ -21,7 +21,7 @@ from .serializers import (
             'type': 'string'
         }
     ],
-    responses={200: {'type': 'object', 'properties': {'results': {'type': 'array', 'items': DestinationSerializer}}}}
+    responses={200: DestinationResponseSerializer}
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
