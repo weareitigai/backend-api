@@ -26,7 +26,7 @@ urlpatterns = [
     path('', root_redirect, name='root'),
     
     # Admin Honeypot
-    path('admin/login/', include('admin_honeypot.urls')),
+    path('admin/honeypot/', include('admin_honeypot.urls')),
     
     path('admin/', admin.site.urls),
     
