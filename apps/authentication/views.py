@@ -267,6 +267,19 @@ def logout_view(request):
 
 
 @extend_schema(
+    responses={200: UserSerializer}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def profile_view(request):
+    """Get current user profile."""
+    return Response({
+        'success': True,
+        'user': UserSerializer(request.user).data
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
     request=ForgotPasswordSerializer,
     responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
 )

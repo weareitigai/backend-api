@@ -9,6 +9,7 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('profile/', views.profile_view, name='profile'),  # Add profile endpoint
     path('forgot-password/', views.forgot_password_view, name='forgot-password'),
     path('reset-password/', views.reset_password_view, name='reset-password'),
     path('change-password/', views.change_password_view, name='change-password'),

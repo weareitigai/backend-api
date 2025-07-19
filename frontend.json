@@ -1,0 +1,239 @@
+{
+  "project": "Tripsetter Partner Onboarding",
+  "description": "A set of screens for a partner sign-up and login flow, including OTP verification and success states.",
+  "theme": {
+    "palette": {
+      "backgroundGradient": "linear-gradient(to bottom right, #00C6A7, #1E65FF)",
+      "primary": {
+        "main": "#1E65FF",
+        "contrastText": "#FFFFFF"
+      },
+      "form": {
+        "background": "rgba(255, 255, 255, 0.2)",
+        "backdropFilter": "blur(10px)"
+      },
+      "text": {
+        "primary": "#333333",
+        "secondary": "#6c757d",
+        "link": "#1E65FF",
+        "error": "#dc3545",
+        "success": "#28a745"
+      },
+      "input": {
+        "background": "#FFFFFF",
+        "border": "#ced4da",
+        "placeholder": "#6c757d"
+      },
+      "icon": {
+        "default": "#333333"
+      }
+    },
+    "typography": {
+      "fontFamily": "'Inter', 'Helvetica Neue', Arial, sans-serif",
+      "h1": {
+        "fontSize": "24px",
+        "fontWeight": "600"
+      },
+      "body": {
+        "fontSize": "14px",
+        "fontWeight": "400"
+      },
+      "label": {
+        "fontSize": "14px",
+        "fontWeight": "500"
+      },
+      "button": {
+        "fontSize": "16px",
+        "fontWeight": "500",
+        "textTransform": "none"
+      }
+    },
+    "styling": {
+      "borderRadius": "12px",
+      "formPadding": "40px",
+      "inputPadding": "12px 16px",
+      "buttonPadding": "14px",
+      "boxShadow": "0 8px 32px 0 rgba(31, 38, 135, 0.37)"
+    }
+  },
+  "reusableComponents": {
+    "FormCard": {
+      "type": "Container",
+      "description": "The main card component that holds form elements.",
+      "styles": {
+        "background": "theme.palette.form.background",
+        "borderRadius": "theme.styling.borderRadius",
+        "padding": "theme.styling.formPadding",
+        "boxShadow": "theme.styling.boxShadow",
+        "backdropFilter": "theme.palette.form.backdropFilter",
+        "maxWidth": "450px",
+        "textAlign": "center"
+      }
+    },
+    "InputField": {
+      "type": "Input",
+      "description": "A standard text input field.",
+      "props": ["type", "placeholder", "label", "value", "onChange", "errorText"],
+      "styles": {
+        "width": "100%",
+        "padding": "theme.styling.inputPadding",
+        "background": "theme.palette.input.background",
+        "border": "1px solid theme.palette.input.border",
+        "borderRadius": "8px",
+        "fontSize": "theme.typography.body.fontSize"
+      }
+    },
+    "PrimaryButton": {
+      "type": "Button",
+      "description": "Main call-to-action button.",
+      "props": ["text", "onClick", "fullWidth"],
+      "styles": {
+        "background": "theme.palette.primary.main",
+        "color": "theme.palette.primary.contrastText",
+        "padding": "theme.styling.buttonPadding",
+        "border": "none",
+        "borderRadius": "8px",
+        "cursor": "pointer",
+        "fontSize": "theme.typography.button.fontSize",
+        "fontWeight": "theme.typography.button.fontWeight"
+      }
+    },
+    "SocialAuthButton": {
+      "type": "Button",
+      "description": "Button for social media authentication (Google, Apple, etc.).",
+      "props": ["provider", "onClick"],
+      "styles": {
+        "background": "#FFFFFF",
+        "border": "1px solid #ced4da",
+        "borderRadius": "50%",
+        "width": "48px",
+        "height": "48px",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "cursor": "pointer"
+      }
+    },
+    "OtpInput": {
+      "type": "InputGroup",
+      "description": "A set of 4 input fields for OTP entry.",
+      "styles": {
+        "display": "flex",
+        "justifyContent": "center",
+        "gap": "10px",
+        "input": {
+          "width": "50px",
+          "height": "50px",
+          "textAlign": "center",
+          "fontSize": "20px",
+          "borderRadius": "8px",
+          "border": "1px solid theme.palette.input.border"
+        }
+      }
+    }
+  },
+  "screens": [
+    {
+      "name": "PartnerSignUp",
+      "path": "/partner/signup",
+      "description": "Initial sign-up form for new partners.",
+      "layout": {
+        "root": {
+          "component": "FormCard",
+          "children": [
+            { "component": "h1", "text": "Become a Partner on Tripsetter" },
+            { "component": "p", "text": "Sign up to list your tours and grow your travel business", "style": { "marginBottom": "2rem", "color": "theme.palette.text.secondary"} },
+            { "component": "InputField", "props": { "type": "text", "placeholder": "Full Name" } },
+            { "component": "InputField", "props": { "type": "text", "placeholder": "Travel Company Name" } },
+            { "component": "InputField", "props": { "type": "email", "placeholder": "Email" } },
+            { "component": "InputField", "props": { "type": "tel", "placeholder": "Mobile Number" } },
+            { "component": "InputField", "props": { "type": "password", "placeholder": "Password" } },
+            { "component": "Divider", "text": "OR" },
+            { "component": "Container", "style": {"display": "flex", "gap": "1rem", "justifyContent": "center"}, "children": [
+                { "component": "SocialAuthButton", "props": { "provider": "google" } },
+                { "component": "SocialAuthButton", "props": { "provider": "apple" } },
+                { "component": "SocialAuthButton", "props": { "provider": "instagram" } }
+            ]},
+            { "component": "PrimaryButton", "props": { "text": "Sign Up & Continue →", "fullWidth": true } },
+            { "component": "Link", "text": "Already have an account? Log in", "href": "/partner/login" }
+          ]
+        }
+      },
+      "states": {
+        "withError": {
+          "description": "Displays when form validation fails.",
+          "modifications": [
+            { "target": "InputField[type=email]", "add": { "errorText": "Please enter a valid email address." } },
+            { "target": "InputField[type=tel]", "add": { "errorText": "Mobile number is required." } }
+          ]
+        },
+        "verifyOtp": {
+          "description": "Displays OTP input fields after user enters mobile or email.",
+          "modifications": [
+             { "target": "InputField[type=email]", "replaceWith": { "component": "OtpInput" } },
+             { "target": "InputField[type=tel]", "disable": true }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PartnerLogin",
+      "path": "/partner/login",
+      "description": "Login form for existing partners.",
+      "layout": {
+        "root": {
+          "component": "FormCard",
+          "children": [
+            { "component": "h1", "text": "Welcome Back!" },
+            { "component": "p", "text": "Sign in to your account to continue.", "style": { "marginBottom": "2rem", "color": "theme.palette.text.secondary"} },
+            { "component": "InputField", "props": { "type": "text", "placeholder": "Email or Mobile Number" } },
+            { "component": "InputField", "props": { "type": "password", "placeholder": "Password" } },
+            { "component": "Link", "text": "Forgot password?", "href": "/partner/forgot-password", "style": {"textAlign": "right", "display": "block"} },
+            { "component": "Divider", "text": "OR" },
+            { "component": "Container", "style": {"display": "flex", "gap": "1rem", "justifyContent": "center"}, "children": [
+                { "component": "SocialAuthButton", "props": { "provider": "google" } },
+                { "component": "SocialAuthButton", "props": { "provider": "apple" } },
+                { "component": "SocialAuthButton", "props": { "provider": "instagram" } }
+            ]},
+            { "component": "PrimaryButton", "props": { "text": "Sign In", "fullWidth": true } },
+            { "component": "Link", "text": "Don't have an account? Sign Up", "href": "/partner/signup" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SignUpSuccess",
+      "path": "/partner/signup-success",
+      "description": "Confirmation screen shown after successful sign-up.",
+      "layout": {
+        "root": {
+          "component": "FormCard",
+          "children": [
+            { "component": "Icon", "name": "check-circle", "style": { "color": "theme.palette.text.success", "fontSize": "48px"} },
+            { "component": "h1", "text": "You're signed in successfully!", "style": {"marginTop": "1rem"} },
+            { "component": "p", "text": "Let's verify your details to start listing tours.", "style": { "color": "theme.palette.text.secondary"} },
+            { "component": "PrimaryButton", "props": { "text": "Verify Details", "fullWidth": true } },
+            { "component": "SecondaryButton", "props": { "text": "Prefer to do it later?", "fullWidth": true } }
+          ]
+        }
+      }
+    },
+    {
+      "name": "LoginSuccess",
+      "path": "/partner/login-success",
+      "description": "Confirmation screen shown after successful login.",
+      "layout": {
+        "root": {
+          "component": "FormCard",
+          "children": [
+            { "component": "Icon", "name": "check-circle", "style": { "color": "theme.palette.text.success", "fontSize": "48px"} },
+            { "component": "h1", "text": "Successfully Logged In!", "style": {"marginTop": "1rem"} },
+            { "component": "p", "text": "We will redirect you to your dashboard...", "style": { "color": "theme.palette.text.secondary"} },
+            { "component": "PrimaryButton", "props": { "text": "Continue to Dashboard", "fullWidth": true } },
+            { "component": "SecondaryButton", "props": { "text": "Verify Now", "fullWidth": true } }
+          ]
+        }
+      }
+    }
+  ]
+}
