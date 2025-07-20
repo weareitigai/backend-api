@@ -8,6 +8,10 @@ This document provides instructions for setting up and running the backend serve
 - **Local:** `http://localhost:8000/api/`
 - **Deployed (Render):** `https://backend-api-vpx2.onrender.com/api/`
 
+## Admin Panel
+
+- **Admin Panel** `https://backend-api-vpx2.onrender.com/admin/`
+
 ## PostgreSQL Database Setup
 
 To set up the PostgreSQL database, follow these steps:
@@ -66,7 +70,7 @@ python manage.py migrate --noinput
 
 1.  **Install dependencies:**
     ```bash
-    pip install -r requirements.txt
+    pip install -r requirements.txt && pip install git+https://github.com/dmpayton/django-admin-honeypot
     ```
 
 2.  **Run database migrations:**
@@ -74,7 +78,13 @@ python manage.py migrate --noinput
     python manage.py migrate
     ```
 
-3.  **Start the development server:**
+3. **Create superuser for django admin panel**
+
+    ```python
+    python manage.py create_superuser_from_env
+    ```
+
+4.  **Start the development server:**
     ```bash
     python manage.py runserver
     ```
@@ -167,16 +177,6 @@ You can test the deployed APIs using Postman.
         ```
     -   After logging in, you will receive an access token. Use this token in the `Authorization` header for authenticated requests (e.g., `Authorization: Bearer <your_token>`).
 
-
-## Run backend locally 
-
-```
-pip install -r requirements.txt && pip install git+https://github.com/dmpayton/django-admin-honeypot.git#egg=django-admin-honeypot && python manage.py migrate --noinput && python manage.py collectstatic --noinput && python manage.py create_superuser_from_env
-```
-
-```python
-python manage.py runserver
-```
 
 ## Temporary Frontend
 
