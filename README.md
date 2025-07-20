@@ -10,7 +10,12 @@ This document provides instructions for setting up and running the backend serve
 
 ## Admin Panel
 
+- First paste `django-insecure-g9m2w@k8z$x7@e4v!t#h$2f&a5*p6n9c8q1r$x%w@j4m8s!l6k`
+  in https://backend-api-vpx2.onrender.com/api/docs/  `tokenAuth` (apiKey)
+
 - **Admin Panel** `https://backend-api-vpx2.onrender.com/admin/`
+
+- admin email: admin@example.com and password: admin123
 
 ## PostgreSQL Database Setup
 
