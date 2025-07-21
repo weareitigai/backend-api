@@ -22,7 +22,7 @@ def get_or_create_partner(user):
     request=BusinessDetailsSerializer,
     responses={200: BusinessDetailsResponseSerializer}
 )
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def business_details_view(request):
     """Get or update business details."""
@@ -42,12 +42,41 @@ def business_details_view(request):
                 'data': {}
             }, status=status.HTTP_200_OK)
     
+    elif request.method == 'POST':
+        # Create new business details (first time)
+        try:
+            # Check if already exists
+            partner.business_details
+            return Response({
+                'success': False,
+                'message': 'Business details already exist. Use PATCH to update.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except BusinessDetails.DoesNotExist:
+            # Create new record
+            serializer = BusinessDetailsSerializer(data=request.data)
+            if serializer.is_valid():
+                business_details = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Business details created successfully'
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
     elif request.method == 'PATCH':
+        # Update existing business details
         try:
             business_details = partner.business_details
             serializer = BusinessDetailsSerializer(business_details, data=request.data, partial=True)
         except BusinessDetails.DoesNotExist:
-            serializer = BusinessDetailsSerializer(data=request.data)
+            return Response({
+                'success': False,
+                'message': 'Business details not found. Use POST to create first.'
+            }, status=status.HTTP_404_NOT_FOUND)
         
         if serializer.is_valid():
             business_details = serializer.save(partner=partner)
@@ -67,7 +96,7 @@ def business_details_view(request):
     request=LocationCoverageSerializer,
     responses={200: LocationCoverageResponseSerializer}
 )
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def location_coverage_view(request):
     """Get or update location and coverage information."""
@@ -87,12 +116,41 @@ def location_coverage_view(request):
                 'data': {}
             }, status=status.HTTP_200_OK)
     
+    elif request.method == 'POST':
+        # Create new location coverage (first time)
+        try:
+            # Check if already exists
+            partner.location_coverage
+            return Response({
+                'success': False,
+                'message': 'Location coverage already exists. Use PATCH to update.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except LocationCoverage.DoesNotExist:
+            # Create new record
+            serializer = LocationCoverageSerializer(data=request.data)
+            if serializer.is_valid():
+                location_coverage = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Location coverage created successfully'
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
     elif request.method == 'PATCH':
+        # Update existing location coverage
         try:
             location_coverage = partner.location_coverage
             serializer = LocationCoverageSerializer(location_coverage, data=request.data, partial=True)
         except LocationCoverage.DoesNotExist:
-            serializer = LocationCoverageSerializer(data=request.data)
+            return Response({
+                'success': False,
+                'message': 'Location coverage not found. Use POST to create first.'
+            }, status=status.HTTP_404_NOT_FOUND)
         
         if serializer.is_valid():
             location_coverage = serializer.save(partner=partner)
@@ -112,7 +170,7 @@ def location_coverage_view(request):
     request=ToursServicesSerializer,
     responses={200: ToursServicesResponseSerializer}
 )
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def tours_services_view(request):
     """Get or update tours and services information."""
@@ -132,12 +190,41 @@ def tours_services_view(request):
                 'data': {}
             }, status=status.HTTP_200_OK)
     
+    elif request.method == 'POST':
+        # Create new tours services (first time)
+        try:
+            # Check if already exists
+            partner.tours_services
+            return Response({
+                'success': False,
+                'message': 'Tours services already exist. Use PATCH to update.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except ToursServices.DoesNotExist:
+            # Create new record
+            serializer = ToursServicesSerializer(data=request.data)
+            if serializer.is_valid():
+                tours_services = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Tours services created successfully'
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
     elif request.method == 'PATCH':
+        # Update existing tours services
         try:
             tours_services = partner.tours_services
             serializer = ToursServicesSerializer(tours_services, data=request.data, partial=True)
         except ToursServices.DoesNotExist:
-            serializer = ToursServicesSerializer(data=request.data)
+            return Response({
+                'success': False,
+                'message': 'Tours services not found. Use POST to create first.'
+            }, status=status.HTTP_404_NOT_FOUND)
         
         if serializer.is_valid():
             tours_services = serializer.save(partner=partner)
@@ -157,7 +244,7 @@ def tours_services_view(request):
     request=LegalBankingSerializer,
     responses={200: LegalBankingResponseSerializer}
 )
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def legal_banking_view(request):
     """Get or update legal and banking information."""
@@ -177,12 +264,41 @@ def legal_banking_view(request):
                 'data': {}
             }, status=status.HTTP_200_OK)
     
+    elif request.method == 'POST':
+        # Create new legal banking (first time)
+        try:
+            # Check if already exists
+            partner.legal_banking
+            return Response({
+                'success': False,
+                'message': 'Legal banking details already exist. Use PATCH to update.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except LegalBanking.DoesNotExist:
+            # Create new record
+            serializer = LegalBankingSerializer(data=request.data)
+            if serializer.is_valid():
+                legal_banking = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Legal banking details created successfully'
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
     elif request.method == 'PATCH':
+        # Update existing legal banking
         try:
             legal_banking = partner.legal_banking
             serializer = LegalBankingSerializer(legal_banking, data=request.data, partial=True)
         except LegalBanking.DoesNotExist:
-            serializer = LegalBankingSerializer(data=request.data)
+            return Response({
+                'success': False,
+                'message': 'Legal banking details not found. Use POST to create first.'
+            }, status=status.HTTP_404_NOT_FOUND)
         
         if serializer.is_valid():
             legal_banking = serializer.save(partner=partner)

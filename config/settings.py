@@ -144,6 +144,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -230,18 +234,27 @@ JAZZMIN_SETTINGS = {
 }
 
 # Email Configuration
-# Use console backend for development, SMTP for production
-if DEBUG:
+# Support for both SendGrid and SMTP backends
+EMAIL_BACKEND_TYPE = config('EMAIL_BACKEND', default='console')
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@travelpartner.com')
+FROM_NAME = config('FROM_NAME', default='Travel Partner Platform')
+
+if EMAIL_BACKEND_TYPE == 'sendgrid' and SENDGRID_API_KEY:
+    # Use SendGrid for email sending
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # We'll override in utils
+elif DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'noreply@travelpartner.com'
 else:
+    # Fallback to SMTP
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
     EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+    if not DEFAULT_FROM_EMAIL:
+        DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Twilio Configuration (for SMS)
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
@@ -259,6 +272,5 @@ CELERY_RESULT_SERIALIZER = 'json'
 OTP_LENGTH = 6
 OTP_EXPIRY_MINUTES = 10
 
-# File Upload Configuration
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+# Feature Flags
+MOBILE_OTP_ENABLED = config('MOBILE_OTP_ENABLED', default=False, cast=bool)  # Temporarily disabled

@@ -21,6 +21,9 @@ import logging
 from django.conf import settings
 
 
+logger = logging.getLogger(__name__)
+
+
 @extend_schema(
     request=SendEmailOTPSerializer,
     responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
@@ -97,6 +100,13 @@ def verify_email_otp_view(request):
 @permission_classes([AllowAny])
 def send_mobile_otp_view(request):
     """Send OTP to user's mobile number."""
+    # Check if mobile OTP is enabled
+    if not settings.MOBILE_OTP_ENABLED:
+        return Response({
+            'success': False,
+            'message': 'Mobile OTP service is temporarily unavailable. Please use email verification instead.'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
     serializer = SendMobileOTPSerializer(data=request.data)
     if serializer.is_valid():
         mobile = serializer.validated_data['mobile']
@@ -130,6 +140,13 @@ def send_mobile_otp_view(request):
 @permission_classes([AllowAny])
 def verify_mobile_otp_view(request):
     """Verify OTP sent to mobile."""
+    # Check if mobile OTP is enabled
+    if not settings.MOBILE_OTP_ENABLED:
+        return Response({
+            'success': False,
+            'message': 'Mobile OTP service is temporarily unavailable. Please use email verification instead.'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
     serializer = VerifyMobileOTPSerializer(data=request.data)
     if serializer.is_valid():
         mobile = serializer.validated_data['mobile']
@@ -195,10 +212,16 @@ def signup_view(request):
             # Create token
             token, created = Token.objects.get_or_create(user=user)
             
+            # Get company name from business details
+            companyName = ""
+            if hasattr(user, 'partner') and hasattr(user.partner, 'business_details'):
+                companyName = user.partner.business_details.name
+            
             return Response({
                 'success': True,
                 'user': UserSerializer(user).data,
-                'token': token.key
+                'token': token.key,
+                'companyName': companyName
             }, status=status.HTTP_201_CREATED)
         
         return Response({
@@ -356,7 +379,7 @@ def change_password_view(request):
     serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         user = request.user
-        new_password = serializer.validated_data['new_password']
+        new_password = serializer.validated_data['newPassword']
         
         # Set new password
         user.set_password(new_password)
@@ -372,3 +395,43 @@ def change_password_view(request):
         'message': 'Invalid data provided',
         'errors': serializer.errors
     }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    request={'type': 'object', 'properties': {'mobile': {'type': 'string'}}},
+    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def bypass_mobile_verification_view(request):
+    """Temporary endpoint to bypass mobile verification when OTP is disabled."""
+    if settings.MOBILE_OTP_ENABLED:
+        return Response({
+            'success': False,
+            'message': 'Mobile OTP is enabled. Please use the regular OTP verification process.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    mobile = request.data.get('mobile')
+    if not mobile:
+        return Response({
+            'success': False,
+            'message': 'Mobile number is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Mark mobile as verified for existing users
+    try:
+        user = User.objects.get(mobile=mobile)
+        user.is_mobile_verified = True
+        user.save()
+        
+        logger.info(f"Mobile verification bypassed for user: {user.email}")
+        
+        return Response({
+            'success': True,
+            'message': 'Mobile verification bypassed successfully. Mobile OTP is temporarily disabled.'
+        }, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'User with this mobile number does not exist'
+        }, status=status.HTTP_404_NOT_FOUND)

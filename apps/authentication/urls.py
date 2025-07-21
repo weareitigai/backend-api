@@ -6,6 +6,7 @@ urlpatterns = [
     path('verify-email-otp/', views.verify_email_otp_view, name='verify-email-otp'),
     path('send-mobile-otp/', views.send_mobile_otp_view, name='send-mobile-otp'),
     path('verify-mobile-otp/', views.verify_mobile_otp_view, name='verify-mobile-otp'),
+    path('bypass-mobile-verification/', views.bypass_mobile_verification_view, name='bypass-mobile-verification'),
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),

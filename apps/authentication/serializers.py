@@ -27,11 +27,14 @@ class VerifyMobileOTPSerializer(serializers.Serializer):
 
 class UserSignupSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
+    firstName = serializers.CharField(source='first_name', max_length=30)
+    lastName = serializers.CharField(source='last_name', max_length=30)
+    companyName = serializers.CharField(max_length=255)
     password = serializers.CharField(write_only=True, min_length=8)
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'mobile', 'password']
+        fields = ['firstName', 'lastName', 'companyName', 'email', 'mobile', 'password']
     
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -50,18 +53,31 @@ class UserSignupSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         password = validated_data.pop('password')
+        companyName = validated_data.pop('companyName')
         email = validated_data['email']
         
         # Create user with email as username
         user = User.objects.create_user(
             username=email,
             email=email,
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
+            first_name=validated_data.get('firstName', ''),
+            last_name=validated_data.get('lastName', ''),
             mobile=validated_data.get('mobile', None)
         )
         user.set_password(password)
         user.save()
+        
+        # Create partner profile and business details with company name
+        from apps.partner.models import Partner, BusinessDetails
+        partner = Partner.objects.create(user=user)
+        BusinessDetails.objects.create(
+            partner=partner,
+            name=companyName,
+            address="",  # Will be filled later in onboarding
+            employees=0,  # Will be filled later
+            years=0  # Will be filled later
+        )
+        
         return user
 
 
@@ -142,12 +158,17 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user data."""
+    firstName = serializers.CharField(source='first_name', read_only=True)
+    lastName = serializers.CharField(source='last_name', read_only=True)
+    isEmailVerified = serializers.BooleanField(source='is_email_verified', read_only=True)
+    isMobileVerified = serializers.BooleanField(source='is_mobile_verified', read_only=True)
+    dateJoined = serializers.DateTimeField(source='date_joined', read_only=True)
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'mobile', 
-                 'is_email_verified', 'is_mobile_verified', 'date_joined']
-        read_only_fields = ['id', 'date_joined']
+        fields = ['id', 'firstName', 'lastName', 'email', 'mobile', 
+                 'isEmailVerified', 'isMobileVerified', 'dateJoined']
+        read_only_fields = ['id', 'dateJoined']
 
 
 class UserAuthResponseSerializer(serializers.Serializer):
@@ -159,11 +180,11 @@ class UserAuthResponseSerializer(serializers.Serializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for changing user password."""
-    current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True)
+    currentPassword = serializers.CharField(write_only=True)
+    newPassword = serializers.CharField(write_only=True, min_length=8)
+    confirmPassword = serializers.CharField(write_only=True)
     
-    def validate_current_password(self, value):
+    def validate_currentPassword(self, value):
         """Validate that current password is correct."""
         user = self.context['request'].user
         if not user.check_password(value):
@@ -172,10 +193,10 @@ class ChangePasswordSerializer(serializers.Serializer):
     
     def validate(self, attrs):
         """Validate that new passwords match."""
-        new_password = attrs.get('new_password')
-        confirm_password = attrs.get('confirm_password')
+        newPassword = attrs.get('newPassword')
+        confirmPassword = attrs.get('confirmPassword')
         
-        if new_password != confirm_password:
+        if newPassword != confirmPassword:
             raise serializers.ValidationError("New passwords do not match.")
         
         return attrs

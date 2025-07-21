@@ -1,4 +1,3 @@
-
 # Backend API Documentation
 
 This document provides instructions for setting up and running the backend server for the Travel Partner project. It also includes details about the available API endpoints.
@@ -108,6 +107,29 @@ python manage.py populate_dummy_data
 
 This command will create test users and partners, which can be useful for testing authenticated endpoints.
 
+## Mobile OTP Configuration
+
+Mobile OTP functionality can be temporarily disabled using the `MOBILE_OTP_ENABLED` environment variable:
+
+- Set `MOBILE_OTP_ENABLED=False` to disable mobile OTP (default)
+- Set `MOBILE_OTP_ENABLED=True` to enable mobile OTP
+
+When disabled, the mobile OTP endpoints will return a 503 Service Unavailable error with an appropriate message.
+
+### Bypassing Mobile Verification (When OTP is Disabled)
+
+When mobile OTP is disabled, you can use the bypass endpoint:
+- **`POST /auth/bypass-mobile-verification/`**: Manually mark a mobile number as verified
+  - **Parameters**: `{ "mobile": "+1234567890" }`
+  - Only works when `MOBILE_OTP_ENABLED=False`
+
+### Management Commands
+
+Check mobile OTP status:
+```bash
+python manage.py toggle_mobile_otp --status
+```
+
 ## API Endpoints
 
 All endpoints are prefixed with `/api/`.
@@ -203,3 +225,62 @@ A temporary frontend is available in the `frontend` directory. To run it:
     ```
 
 The frontend will be available at `http://localhost:5173`.
+
+## Email Configuration (SendGrid Integration)
+
+This project supports multiple email backends for sending OTP emails:
+
+### SendGrid Setup (Recommended)
+
+1. **Create a SendGrid account** at https://sendgrid.com
+2. **Verify your sender email** in SendGrid dashboard
+3. **Create an API key** with Mail Send permissions
+4. **Update your .env file:**
+   ```bash
+   EMAIL_BACKEND=sendgrid
+   SENDGRID_API_KEY=your-sendgrid-api-key-here
+   DEFAULT_FROM_EMAIL=your-verified-email@domain.com
+   FROM_NAME=Travel Partner Platform
+   ```
+
+### Email Features
+
+✅ **Professional HTML Templates**: Beautiful, responsive email design  
+✅ **Plain Text Fallback**: Automatic plain text versions  
+✅ **Multiple Backends**: SendGrid, SMTP, or console support  
+✅ **Graceful Fallback**: Automatic fallback if primary method fails  
+✅ **Testing Tools**: Built-in commands for validation  
+
+### Testing Email Integration
+
+Use the management command to test your email setup:
+
+```bash
+# Check configuration only
+python manage.py test_email_otp --check-config
+
+# Send test email
+python manage.py test_email_otp --email your-test@email.com
+
+# Send with custom OTP
+python manage.py test_email_otp --email test@example.com --otp 999888
+```
+
+### Alternative Email Backends
+
+**SMTP Configuration (Gmail/Outlook):**
+```bash
+EMAIL_BACKEND=smtp
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_FROM_EMAIL=your-email@gmail.com
+```
+
+**Console Backend (Development):**
+```bash
+EMAIL_BACKEND=console
+```
+
+For detailed setup instructions, see `SENDGRID_SETUP.md`.

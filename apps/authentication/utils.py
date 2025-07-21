@@ -11,6 +11,13 @@ try:
 except ImportError:
     TWILIO_AVAILABLE = False
 
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
+
 
 def generate_otp(length=6):
     """Generate a random OTP of specified length."""
@@ -18,20 +25,119 @@ def generate_otp(length=6):
 
 
 def send_email_otp(email, otp):
-    """Send OTP via email."""
+    """Send OTP via email using SendGrid or fallback to SMTP/console."""
     subject = 'Your OTP for Travel Partner Platform'
-    message = f'Your OTP is: {otp}. This OTP will expire in 10 minutes.'
-    from_email = settings.DEFAULT_FROM_EMAIL
     
+    # Create HTML email template
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Your OTP Code</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #007bff; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+            .otp-code {{ font-size: 32px; font-weight: bold; color: #007bff; text-align: center; margin: 20px 0; letter-spacing: 5px; }}
+            .note {{ background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+            .footer {{ text-align: center; color: #666; margin-top: 20px; font-size: 14px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Travel Partner Platform</h1>
+                <p>Email Verification</p>
+            </div>
+            <div class="content">
+                <h2>Hello!</h2>
+                <p>You requested an OTP code for email verification. Please use the code below to complete your verification:</p>
+                
+                <div class="otp-code">{otp}</div>
+                
+                <div class="note">
+                    <strong>Important:</strong> This OTP will expire in 10 minutes for security reasons.
+                </div>
+                
+                <p>If you didn't request this OTP, please ignore this email.</p>
+                
+                <p>Thank you for using Travel Partner Platform!</p>
+            </div>
+            <div class="footer">
+                <p>© 2025 Travel Partner Platform. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Plain text version
+    plain_text = f"""
+    Travel Partner Platform - Email Verification
+    
+    Hello!
+    
+    You requested an OTP code for email verification. Please use the code below:
+    
+    OTP: {otp}
+    
+    This OTP will expire in 10 minutes.
+    
+    If you didn't request this OTP, please ignore this email.
+    
+    Thank you for using Travel Partner Platform!
+    """
+    
+    # Try SendGrid first if available and configured
+    if (SENDGRID_AVAILABLE and 
+        hasattr(settings, 'SENDGRID_API_KEY') and 
+        settings.SENDGRID_API_KEY and
+        hasattr(settings, 'EMAIL_BACKEND_TYPE') and
+        settings.EMAIL_BACKEND_TYPE == 'sendgrid'):
+        
+        try:
+            message = Mail(
+                from_email=(settings.DEFAULT_FROM_EMAIL, getattr(settings, 'FROM_NAME', 'Travel Partner Platform')),
+                to_emails=email,
+                subject=subject,
+                html_content=html_content,
+                plain_text_content=plain_text
+            )
+            
+            sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+            response = sg.send(message)
+            
+            print(f"✅ SENDGRID EMAIL OTP SENT to {email}: {otp}")
+            print(f"📧 Response Status: {response.status_code}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ SendGrid Error: {e}")
+            print("🔄 Falling back to Django email backend...")
+    
+    # Fallback to Django's email backend (SMTP or console)
     try:
-        send_mail(subject, message, from_email, [email])
-        print(f"✅ EMAIL OTP SENT to {email}: {otp}")
+        from django.core.mail import EmailMultiAlternatives
+        
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[email]
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        
+        print(f"✅ DJANGO EMAIL OTP SENT to {email}: {otp}")
         return True
+        
     except Exception as e:
-        print(f"❌ Error sending email: {e}")
+        print(f"❌ Django Email Error: {e}")
         print(f"🔧 CONSOLE FALLBACK - EMAIL OTP for {email}: {otp}")
         print(f"📧 Subject: {subject}")
-        print(f"📝 Message: {message}")
+        print(f"📝 Message: {plain_text}")
         print("-" * 50)
         # Return True for testing purposes - in production you might want False
         return True

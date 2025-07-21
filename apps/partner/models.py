@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from .validators import validate_document_file
 
 User = get_user_model()
 
@@ -87,7 +88,24 @@ class ToursServices(models.Model):
 class LegalBanking(models.Model):
     """Legal and banking information."""
     partner = models.OneToOneField(Partner, on_delete=models.CASCADE, related_name='legal_banking')
-    pan_or_aadhaar = models.CharField(max_length=20)
+    
+    # File upload for PAN/Aadhaar document
+    pan_or_aadhaar_file = models.FileField(
+        upload_to='pan_aadhaar_docs/', 
+        blank=True, 
+        null=True,
+        validators=[validate_document_file],
+        help_text="Upload PAN/Aadhaar document (PDF/Image, max 10MB)"
+    )
+    
+    # Text field as backup/alternative
+    pan_or_aadhaar_text = models.CharField(
+        max_length=20, 
+        blank=True, 
+        null=True,
+        help_text="PAN/Aadhaar number as text"
+    )
+    
     business_proof_file = models.FileField(upload_to='business_proofs/', blank=True, null=True)
     license_number = models.CharField(max_length=100, blank=True, null=True)
     company_type = models.CharField(max_length=100)
