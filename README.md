@@ -141,11 +141,11 @@ All endpoints are prefixed with `/api/`.
 -   **`POST /auth/verify-email-otp/`**: Verifies the OTP sent to the email.
     -   **Parameters**: `{ "email": "user@example.com", "otp": "123456" }`
 -   **`POST /auth/send-mobile-otp/`**: Sends an OTP to the user's mobile number.
-    -   **Parameters**: `{ "mobile_number": "+1234567890" }`
+    -   **Parameters**: `{ "mobileNumber": "+1234567890" }`
 -   **`POST /auth/verify-mobile-otp/`**: Verifies the OTP sent to the mobile number.
-    -   **Parameters**: `{ "mobile_number": "+1234567890", "otp": "123456" }`
+    -   **Parameters**: `{ "mobileNumber": "+1234567890", "otp": "123456" }`
 -   **`POST /auth/signup/`**: Registers a new user.
-    -   **Parameters**: `{ "email": "user@example.com", "password": "password123", "full_name": "Test User" }`
+    -   **Parameters**: `{ "email": "user@example.com", "password": "password123", "fullName": "Test User" }`
 -   **`POST /auth/login/`**: Logs in a user.
     -   **Parameters**: `{ "email": "user@example.com", "password": "password123" }`
 -   **`POST /auth/logout/`**: Logs out the currently authenticated user.
@@ -153,9 +153,9 @@ All endpoints are prefixed with `/api/`.
 -   **`POST /auth/forgot-password/`**: Initiates the password reset process.
     -   **Parameters**: `{ "email": "user@example.com" }`
 -   **`POST /auth/reset-password/`**: Resets the password using a token.
-    -   **Parameters**: `{ "token": "reset_token", "new_password": "new_password123" }`
+    -   **Parameters**: `{ "token": "reset_token", "newPassword": "new_password123" }`
 -   **`POST /auth/change-password/`**: Changes the password for an authenticated user.
-    -   **Parameters**: `{ "old_password": "current_password", "new_password": "new_password123" }`
+    -   **Parameters**: `{ "oldPassword": "current_password", "newPassword": "new_password123" }`
 
 ### Partner Onboarding
 
@@ -188,7 +188,7 @@ You can test the deployed APIs using Postman.
         {
             "email": "testuser@example.com",
             "password": "password123",
-            "full_name": "Test User"
+            "fullName": "Test User"
         }
         ```
 

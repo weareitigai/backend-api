@@ -60,8 +60,8 @@ class UserSignupSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             username=email,
             email=email,
-            first_name=validated_data.get('firstName', ''),
-            last_name=validated_data.get('lastName', ''),
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
             mobile=validated_data.get('mobile', None)
         )
         user.set_password(password)
