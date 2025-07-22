@@ -67,16 +67,9 @@ class UserSignupSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         
-        # Create partner profile and business details with company name
-        from apps.partner.models import Partner, BusinessDetails
+        # Create partner profile only (do not auto-create business details)
+        from apps.partner.models import Partner
         partner = Partner.objects.create(user=user)
-        BusinessDetails.objects.create(
-            partner=partner,
-            name=companyName,
-            address="",  # Will be filled later in onboarding
-            employees=0,  # Will be filled later
-            years=0  # Will be filled later
-        )
         
         return user
 

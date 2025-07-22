@@ -9,6 +9,12 @@ class Partner(models.Model):
     """Main partner profile model."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='partner')
     is_verified = models.BooleanField(default=False)
+    STATUS_CHOICES = [
+        ('in-process', 'In Process'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in-process')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

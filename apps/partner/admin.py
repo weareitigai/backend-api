@@ -5,8 +5,8 @@ from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, L
 
 @admin.register(Partner)
 class PartnerAdmin(ImportExportModelAdmin):
-    list_display = ['user', 'is_verified', 'created_at', 'updated_at']
-    list_filter = ['is_verified', 'created_at']
+    list_display = ['user', 'is_verified', 'status', 'created_at', 'updated_at']
+    list_filter = ['is_verified', 'status', 'created_at']
     search_fields = ['user__email', 'user__first_name', 'user__last_name']
     ordering = ['-created_at']
     list_per_page = 25

@@ -86,10 +86,16 @@ class PartnerStatusSerializer(serializers.ModelSerializer):
     """Serializer for partner status information."""
     completedSteps = serializers.ReadOnlyField(source='completed_steps')
     isVerified = serializers.BooleanField(source='is_verified', read_only=True)
-    
+    status = serializers.CharField(read_only=True)
+    user = serializers.SerializerMethodField()
+
     class Meta:
         model = Partner
-        fields = ['completedSteps', 'isVerified']
+        fields = ['completedSteps', 'isVerified', 'status', 'user']
+
+    def get_user(self, obj):
+        from apps.authentication.serializers import UserSerializer
+        return UserSerializer(obj.user).data
 
 
 class BusinessDetailsResponseSerializer(serializers.Serializer):

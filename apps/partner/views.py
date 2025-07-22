@@ -17,6 +17,15 @@ def get_or_create_partner(user):
     partner, created = Partner.objects.get_or_create(user=user)
     return partner
 
+def get_partner_by_user_id(user_id):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
+        user = User.objects.get(id=user_id)
+        return Partner.objects.get(user=user)
+    except (User.DoesNotExist, Partner.DoesNotExist):
+        return None
+
 
 @extend_schema(
     request=BusinessDetailsSerializer,
@@ -26,7 +35,13 @@ def get_or_create_partner(user):
 @permission_classes([IsAuthenticated])
 def business_details_view(request):
     """Get or update business details."""
-    partner = get_or_create_partner(request.user)
+    user_id = request.query_params.get('user_id')
+    if user_id:
+        partner = get_partner_by_user_id(user_id)
+        if not partner:
+            return Response({'success': False, 'message': 'Partner for user_id not found.'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        partner = get_or_create_partner(request.user)
     
     if request.method == 'GET':
         try:
@@ -43,16 +58,20 @@ def business_details_view(request):
             }, status=status.HTTP_200_OK)
     
     elif request.method == 'POST':
-        # Create new business details (first time)
+        # Create or update business details (upsert behavior)
         try:
-            # Check if already exists
-            partner.business_details
-            return Response({
-                'success': False,
-                'message': 'Business details already exist. Use PATCH to update.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Try to get existing business details
+            business_details = partner.business_details
+            # If exists, update it
+            serializer = BusinessDetailsSerializer(business_details, data=request.data, partial=True)
+            if serializer.is_valid():
+                business_details = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Business details updated successfully'
+                }, status=status.HTTP_200_OK)
         except BusinessDetails.DoesNotExist:
-            # Create new record
+            # If doesn't exist, create new record
             serializer = BusinessDetailsSerializer(data=request.data)
             if serializer.is_valid():
                 business_details = serializer.save(partner=partner)
@@ -60,12 +79,12 @@ def business_details_view(request):
                     'success': True,
                     'message': 'Business details created successfully'
                 }, status=status.HTTP_201_CREATED)
-            
-            return Response({
-                'success': False,
-                'message': 'Invalid data provided',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'PATCH':
         # Update existing business details
@@ -100,7 +119,13 @@ def business_details_view(request):
 @permission_classes([IsAuthenticated])
 def location_coverage_view(request):
     """Get or update location and coverage information."""
-    partner = get_or_create_partner(request.user)
+    user_id = request.query_params.get('user_id')
+    if user_id:
+        partner = get_partner_by_user_id(user_id)
+        if not partner:
+            return Response({'success': False, 'message': 'Partner for user_id not found.'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        partner = get_or_create_partner(request.user)
     
     if request.method == 'GET':
         try:
@@ -117,16 +142,20 @@ def location_coverage_view(request):
             }, status=status.HTTP_200_OK)
     
     elif request.method == 'POST':
-        # Create new location coverage (first time)
+        # Create or update location coverage (upsert behavior)
         try:
-            # Check if already exists
-            partner.location_coverage
-            return Response({
-                'success': False,
-                'message': 'Location coverage already exists. Use PATCH to update.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Try to get existing location coverage
+            location_coverage = partner.location_coverage
+            # If exists, update it
+            serializer = LocationCoverageSerializer(location_coverage, data=request.data, partial=True)
+            if serializer.is_valid():
+                location_coverage = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Location coverage updated successfully'
+                }, status=status.HTTP_200_OK)
         except LocationCoverage.DoesNotExist:
-            # Create new record
+            # If doesn't exist, create new record
             serializer = LocationCoverageSerializer(data=request.data)
             if serializer.is_valid():
                 location_coverage = serializer.save(partner=partner)
@@ -134,12 +163,12 @@ def location_coverage_view(request):
                     'success': True,
                     'message': 'Location coverage created successfully'
                 }, status=status.HTTP_201_CREATED)
-            
-            return Response({
-                'success': False,
-                'message': 'Invalid data provided',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'PATCH':
         # Update existing location coverage
@@ -174,7 +203,13 @@ def location_coverage_view(request):
 @permission_classes([IsAuthenticated])
 def tours_services_view(request):
     """Get or update tours and services information."""
-    partner = get_or_create_partner(request.user)
+    user_id = request.query_params.get('user_id')
+    if user_id:
+        partner = get_partner_by_user_id(user_id)
+        if not partner:
+            return Response({'success': False, 'message': 'Partner for user_id not found.'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        partner = get_or_create_partner(request.user)
     
     if request.method == 'GET':
         try:
@@ -191,16 +226,20 @@ def tours_services_view(request):
             }, status=status.HTTP_200_OK)
     
     elif request.method == 'POST':
-        # Create new tours services (first time)
+        # Create or update tours services (upsert behavior)
         try:
-            # Check if already exists
-            partner.tours_services
-            return Response({
-                'success': False,
-                'message': 'Tours services already exist. Use PATCH to update.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Try to get existing tours services
+            tours_services = partner.tours_services
+            # If exists, update it
+            serializer = ToursServicesSerializer(tours_services, data=request.data, partial=True)
+            if serializer.is_valid():
+                tours_services = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Tours services updated successfully'
+                }, status=status.HTTP_200_OK)
         except ToursServices.DoesNotExist:
-            # Create new record
+            # If doesn't exist, create new record
             serializer = ToursServicesSerializer(data=request.data)
             if serializer.is_valid():
                 tours_services = serializer.save(partner=partner)
@@ -208,12 +247,12 @@ def tours_services_view(request):
                     'success': True,
                     'message': 'Tours services created successfully'
                 }, status=status.HTTP_201_CREATED)
-            
-            return Response({
-                'success': False,
-                'message': 'Invalid data provided',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'PATCH':
         # Update existing tours services
@@ -248,7 +287,13 @@ def tours_services_view(request):
 @permission_classes([IsAuthenticated])
 def legal_banking_view(request):
     """Get or update legal and banking information."""
-    partner = get_or_create_partner(request.user)
+    user_id = request.query_params.get('user_id')
+    if user_id:
+        partner = get_partner_by_user_id(user_id)
+        if not partner:
+            return Response({'success': False, 'message': 'Partner for user_id not found.'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        partner = get_or_create_partner(request.user)
     
     if request.method == 'GET':
         try:
@@ -265,16 +310,20 @@ def legal_banking_view(request):
             }, status=status.HTTP_200_OK)
     
     elif request.method == 'POST':
-        # Create new legal banking (first time)
+        # Create or update legal banking (upsert behavior)
         try:
-            # Check if already exists
-            partner.legal_banking
-            return Response({
-                'success': False,
-                'message': 'Legal banking details already exist. Use PATCH to update.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Try to get existing legal banking
+            legal_banking = partner.legal_banking
+            # If exists, update it
+            serializer = LegalBankingSerializer(legal_banking, data=request.data, partial=True)
+            if serializer.is_valid():
+                legal_banking = serializer.save(partner=partner)
+                return Response({
+                    'success': True,
+                    'message': 'Legal banking details updated successfully'
+                }, status=status.HTTP_200_OK)
         except LegalBanking.DoesNotExist:
-            # Create new record
+            # If doesn't exist, create new record
             serializer = LegalBankingSerializer(data=request.data)
             if serializer.is_valid():
                 legal_banking = serializer.save(partner=partner)
@@ -282,12 +331,12 @@ def legal_banking_view(request):
                     'success': True,
                     'message': 'Legal banking details created successfully'
                 }, status=status.HTTP_201_CREATED)
-            
-            return Response({
-                'success': False,
-                'message': 'Invalid data provided',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'PATCH':
         # Update existing legal banking
@@ -321,7 +370,13 @@ def legal_banking_view(request):
 @permission_classes([IsAuthenticated])
 def get_partner_status(request):
     """Get step completion status."""
-    partner = get_or_create_partner(request.user)
+    user_id = request.query_params.get('user_id')
+    if user_id:
+        partner = get_partner_by_user_id(user_id)
+        if not partner:
+            return Response({'success': False, 'message': 'Partner for user_id not found.'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        partner = get_or_create_partner(request.user)
     serializer = PartnerStatusSerializer(partner)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -339,6 +394,7 @@ def complete_onboarding(request):
     completed_steps = partner.completed_steps
     if len(completed_steps) >= 4:  # All 4 steps completed
         partner.is_verified = True
+        partner.status = 'in-process'
         partner.save()
         return Response({
             'success': True,

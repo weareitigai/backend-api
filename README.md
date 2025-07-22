@@ -159,12 +159,22 @@ All endpoints are prefixed with `/api/`.
 
 ### Partner Onboarding
 
--   **`POST /partner/business-details/`**: Saves the business details for a partner.
--   **`POST /partner/location-coverage/`**: Saves the location coverage for a partner.
--   **`POST /partner/tours-services/`**: Saves the tours and services information for a partner.
--   **`POST /partner/legal-banking/`**: Saves the legal and banking details for a partner.
+-   **`POST /partner/business-details/`**: Creates or updates business details for a partner (upsert behavior).
+-   **`GET /partner/business-details/`**: Retrieves business details for a partner.
+-   **`PATCH /partner/business-details/`**: Updates existing business details for a partner.
+-   **`POST /partner/location-coverage/`**: Creates or updates location coverage for a partner (upsert behavior).
+-   **`GET /partner/location-coverage/`**: Retrieves location coverage for a partner.
+-   **`PATCH /partner/location-coverage/`**: Updates existing location coverage for a partner.
+-   **`POST /partner/tours-services/`**: Creates or updates tours and services information for a partner (upsert behavior).
+-   **`GET /partner/tours-services/`**: Retrieves tours and services information for a partner.
+-   **`PATCH /partner/tours-services/`**: Updates existing tours and services information for a partner.
+-   **`POST /partner/legal-banking/`**: Creates or updates legal and banking details for a partner (upsert behavior).
+-   **`GET /partner/legal-banking/`**: Retrieves legal and banking details for a partner.
+-   **`PATCH /partner/legal-banking/`**: Updates existing legal and banking details for a partner.
 -   **`GET /partner/status/`**: Retrieves the onboarding status of a partner.
 -   **`POST /partner/complete-onboarding/`**: Marks the partner's onboarding as complete.
+
+**Note**: All POST endpoints for partner onboarding now support "upsert" behavior - they will create the record if it doesn't exist, or update it if it already exists. This provides a better user experience by eliminating the confusion between when to use POST vs PATCH.
 
 ### Common Data
 
@@ -284,3 +294,272 @@ EMAIL_BACKEND=console
 ```
 
 For detailed setup instructions, see `SENDGRID_SETUP.md`.
+
+
+
+
+
+### Partner Onboarding GET APIs with user_id
+
+In apps/partner/views.py, the following endpoints allow you to pass a user_id as a query parameter to fetch another user's partner-related details (if you have permission):
+- GET /api/partner/business-details/?user_id=<id>
+Returns business details for the partner associated with the given user ID.
+- GET /api/partner/location-coverage/?user_id=<id>
+Returns location coverage for the partner associated with the given user ID.
+- GET /api/partner/tours-services/?user_id=<id>
+Returns tours and services info for the partner associated with the given user ID.
+- GET /api/partner/legal-banking/?user_id=<id>
+Returns legal and banking details for the partner associated with the given user ID.
+- GET /api/partner/status/?user_id=<id>
+Returns onboarding status for the partner associated with the given user ID.
+If you do not provide user_id, these endpoints return data for the currently authenticated user.
+
+
+
+
+---
+
+Absolutely! Here’s a comprehensive overview of your backend architecture, including all the main features, flows, and the relevant API endpoints. This will help you design the frontend and understand how each part connects.
+
+---
+
+# **Backend Architecture & API Overview**
+
+---
+
+## 1. **Authentication & User Management**
+
+### **User Registration & Login Flow**
+- **Signup:**  
+  `POST /auth/signup/`  
+  **Body:** `{ "email": "...", "password": "...", "fullName": "..." }`  
+  _Registers a new user._
+
+- **Login:**  
+  `POST /auth/login/`  
+  **Body:** `{ "email": "...", "password": "..." }`  
+  _Returns an access token for authenticated requests._
+
+- **Logout:**  
+  `POST /auth/logout/`  
+  _Logs out the current user (token invalidation)._
+
+- **Get Profile:**  
+  `GET /auth/profile/`  
+  _Fetches the authenticated user's profile._
+
+---
+
+### **OTP Verification**
+- **Send Email OTP:**  
+  `POST /auth/send-email-otp/`  
+  **Body:** `{ "email": "..." }`  
+  _Sends OTP to email._
+
+- **Verify Email OTP:**  
+  `POST /auth/verify-email-otp/`  
+  **Body:** `{ "email": "...", "otp": "..." }`  
+  _Verifies the email OTP._
+
+- **Send Mobile OTP:**  
+  `POST /auth/send-mobile-otp/`  
+  **Body:** `{ "mobileNumber": "..." }`  
+  _Sends OTP to mobile (if enabled)._
+
+- **Verify Mobile OTP:**  
+  `POST /auth/verify-mobile-otp/`  
+  **Body:** `{ "mobileNumber": "...", "otp": "..." }`  
+  _Verifies the mobile OTP._
+
+- **Bypass Mobile Verification:**  
+  `POST /auth/bypass-mobile-verification/`  
+  **Body:** `{ "mobile": "..." }`  
+  _For dev/testing, marks mobile as verified if OTP is disabled._
+
+---
+
+### **Password Management**
+- **Forgot Password:**  
+  `POST /auth/forgot-password/`  
+  **Body:** `{ "email": "..." }`  
+  _Initiates password reset._
+
+- **Reset Password:**  
+  `POST /auth/reset-password/`  
+  **Body:** `{ "token": "...", "newPassword": "..." }`  
+  _Resets password using token._
+
+- **Change Password:**  
+  `POST /auth/change-password/`  
+  **Body:** `{ "oldPassword": "...", "newPassword": "..." }`  
+  _Changes password for logged-in user._
+
+---
+
+## 2. **Partner Onboarding (Multi-Step Form Flow)**
+
+Each step is a separate API. All POST endpoints support "upsert" (create or update).
+
+### **Business Details**
+- **Create/Update:**  
+  `POST /partner/business-details/`
+- **Get:**  
+  `GET /partner/business-details/`
+- **Patch:**  
+  `PATCH /partner/business-details/`
+
+### **Location Coverage**
+- **Create/Update:**  
+  `POST /partner/location-coverage/`
+- **Get:**  
+  `GET /partner/location-coverage/`
+- **Patch:**  
+  `PATCH /partner/location-coverage/`
+
+### **Tours & Services**
+- **Create/Update:**  
+  `POST /partner/tours-services/`
+- **Get:**  
+  `GET /partner/tours-services/`
+- **Patch:**  
+  `PATCH /partner/tours-services/`
+
+### **Legal & Banking**
+- **Create/Update:**  
+  `POST /partner/legal-banking/`
+- **Get:**  
+  `GET /partner/legal-banking/`
+- **Patch:**  
+  `PATCH /partner/legal-banking/`
+
+### **Onboarding Status**
+- **Get Status:**  
+  `GET /partner/status/`
+
+### **Complete Onboarding**
+- **Mark Complete:**  
+  `POST /partner/complete-onboarding/`
+
+#### **Admin/Privileged User Access**
+- All the above GET endpoints accept an optional `user_id` query parameter:  
+  e.g. `GET /partner/business-details/?user_id=<id>`  
+  _Returns data for the specified user if you have permission. If not provided, returns data for the current user._
+
+---
+
+## 3. **Common Data Endpoints**
+
+- **Get Destinations:**  
+  `GET /common/destinations/`
+
+- **Get Languages:**  
+  `GET /common/languages/`
+
+- **Get Tour Types:**  
+  `GET /common/tour-types/`
+
+- **Get Timezones:**  
+  `GET /common/timezones/`
+
+_These are used to populate dropdowns, filters, etc. in the frontend._
+
+---
+
+## 4. **Admin Panel**
+
+- **Django Admin:**  
+  `/admin/`  
+  _For superusers to manage all data._
+
+---
+
+## 5. **Email Integration**
+
+- **SendGrid (Recommended):**  
+  Configured via `.env` for production.
+- **SMTP/Console:**  
+  For development/testing.
+
+---
+
+## 6. **Testing & Utilities**
+
+- **Populate Dummy Data:**  
+  `python manage.py populate_dummy_data`  
+  _Creates test users and partners for development._
+
+- **Toggle Mobile OTP:**  
+  `python manage.py toggle_mobile_otp --status`  
+  _Check or change OTP status._
+
+- **Test Email Integration:**  
+  `python manage.py test_email_otp --email ...`  
+  _Send test emails._
+
+---
+
+## 7. **Frontend Integration Flow**
+
+### **User Flow**
+1. **Signup → Email/Mobile OTP → Login → Profile Completion**
+2. **Onboarding:**  
+   - Multi-step forms for business, location, tours, legal, etc.
+   - Each step saves via its respective API.
+   - On completion, call `/partner/complete-onboarding/`.
+3. **Profile & Data:**  
+   - Fetch and display user profile and onboarding status.
+   - Use common data endpoints for form options.
+4. **Admin/Privileged User:**  
+   - Can view/edit onboarding data for any user by passing `user_id`.
+
+### **Authentication**
+- All protected endpoints require the `Authorization: Bearer <token>` header.
+
+### **Error Handling**
+- Handle 503 for OTP endpoints if disabled.
+- Handle permission errors for cross-user data access.
+
+---
+
+## 8. **Security & Permissions**
+- Most endpoints require authentication.
+- Some endpoints (with `user_id`) require admin/privileged access.
+- Tokens must be sent in the `Authorization` header.
+
+---
+
+## 9. **Dev/Testing**
+- Dummy data and bypasses are available for local development.
+- Console/email backends for OTPs in dev mode.
+
+---
+
+# **Summary Table of Key APIs**
+
+| Area                | Endpoint                                      | Method | Notes/Usage                                 |
+|---------------------|-----------------------------------------------|--------|----------------------------------------------|
+| Auth                | /auth/signup/                                 | POST   | Register user                                |
+|                     | /auth/login/                                  | POST   | Login, get token                             |
+|                     | /auth/logout/                                 | POST   | Logout                                       |
+|                     | /auth/profile/                                | GET    | Get user profile                             |
+|                     | /auth/send-email-otp/                         | POST   | Send email OTP                               |
+|                     | /auth/verify-email-otp/                       | POST   | Verify email OTP                             |
+|                     | /auth/send-mobile-otp/                        | POST   | Send mobile OTP                              |
+|                     | /auth/verify-mobile-otp/                      | POST   | Verify mobile OTP                            |
+|                     | /auth/bypass-mobile-verification/             | POST   | Bypass mobile OTP (dev only)                 |
+|                     | /auth/forgot-password/                        | POST   | Forgot password                              |
+|                     | /auth/reset-password/                         | POST   | Reset password                               |
+|                     | /auth/change-password/                        | POST   | Change password                              |
+| Partner Onboarding  | /partner/business-details/                    | GET/POST/PATCH | Business details (upsert)           |
+|                     | /partner/location-coverage/                   | GET/POST/PATCH | Location coverage (upsert)           |
+|                     | /partner/tours-services/                      | GET/POST/PATCH | Tours/services (upsert)              |
+|                     | /partner/legal-banking/                       | GET/POST/PATCH | Legal/banking (upsert)               |
+|                     | /partner/status/                              | GET    | Onboarding status                            |
+|                     | /partner/complete-onboarding/                 | POST   | Mark onboarding complete                     |
+| Common Data         | /common/destinations/                         | GET    | List of destinations                         |
+|                     | /common/languages/                            | GET    | List of languages                            |
+|                     | /common/tour-types/                           | GET    | List of tour types                           |
+|                     | /common/timezones/                            | GET    | List of timezones                            |
+| Admin Panel         | /admin/                                       | -      | Django admin                                 |
+
+---
