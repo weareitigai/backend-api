@@ -251,7 +251,9 @@ class Command(BaseCommand):
                 years=random.randint(1, 15),
                 website=f"https://{business_name.lower().replace(' ', '')}.com" if random.choice([True, False]) else None,
                 reg_number=f"REG{random.randint(100000, 999999)}",
-                address=f"{random.randint(1, 999)} {random.choice(['MG Road', 'Ring Road', 'Main Street', 'Park Avenue'])}, {random.choice(['Mumbai', 'Delhi', 'Bangalore', 'Chennai'])} - {random.randint(100001, 999999)}",
+                city=random.choice(['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad']),
+                state=random.choice(['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Gujarat']),
+                country='India',
                 employees=random.randint(1, 50),
                 seasonal=random.choice([True, False]),
                 annual_bookings=random.randint(50, 1000)

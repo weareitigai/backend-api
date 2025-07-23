@@ -17,7 +17,7 @@ class BusinessDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessDetails
         fields = ['companyName', 'typeOfProvider', 'gstin', 'yearsInBusiness', 'website', 
-                 'regNumber', 'address', 'employeeCount', 'isSeasonalBusiness', 'annualBookings',
+                 'regNumber', 'city', 'state', 'country', 'employeeCount', 'isSeasonalBusiness', 'annualBookings',
                  'createdAt', 'updatedAt']
 
 

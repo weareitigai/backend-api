@@ -24,7 +24,9 @@ if login_response.status_code == 200:
         "years": 5,
         "website": "https://testbusiness.com",
         "reg_number": "REG123456",
-        "address": "123 Test Street, Test City, Test State",
+        "city": "Test City",
+        "state": "Test State",
+        "country": "Test Country",
         "employees": 10,
         "seasonal": False,
         "annual_bookings": 1000

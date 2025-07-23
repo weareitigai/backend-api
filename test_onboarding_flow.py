@@ -22,7 +22,9 @@ if login_response.status_code == 200:
         "name": "Test Business",
         "type_of_provider": ["Tour Operator"],
         "years": 5,
-        "address": "123 Test Street",
+        "city": "Test City",
+        "state": "Test State",
+        "country": "Test Country",
         "employees": 10,
         "seasonal": False
     }
