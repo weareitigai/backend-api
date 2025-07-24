@@ -1,0 +1,357 @@
+{
+  "info": {
+    "_postman_id": "b1e2c3d4-5678-1234-9abc-def012345678",
+    "name": "Travel Partner API",
+    "description": "Comprehensive Postman collection for all Travel Partner API endpoints, grouped by feature. Uses {{base_url}} as the base URL variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://backend-api-vpx2.onrender.com/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Send Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/send-email-otp/", "host": [ "{{base_url}}" ], "path": [ "auth", "send-email-otp/" ] },
+            "description": "Send OTP to user's email."
+          }
+        },
+        {
+          "name": "Verify Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/verify-email-otp/", "host": [ "{{base_url}}" ], "path": [ "auth", "verify-email-otp/" ] },
+            "description": "Verify OTP sent to email."
+          }
+        },
+        {
+          "name": "Send Mobile OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"mobileNumber\": \"+1234567890\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/send-mobile-otp/", "host": [ "{{base_url}}" ], "path": [ "auth", "send-mobile-otp/" ] },
+            "description": "Send OTP to user's mobile number."
+          }
+        },
+        {
+          "name": "Verify Mobile OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"mobileNumber\": \"+1234567890\",\n  \"otp\": \"123456\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/verify-mobile-otp/", "host": [ "{{base_url}}" ], "path": [ "auth", "verify-mobile-otp/" ] },
+            "description": "Verify OTP sent to mobile number."
+          }
+        },
+        {
+          "name": "Bypass Mobile Verification (Dev Only)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"+1234567890\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/bypass-mobile-verification/", "host": [ "{{base_url}}" ], "path": [ "auth", "bypass-mobile-verification/" ] },
+            "description": "Bypass mobile verification (for dev/testing). Only works if OTP is disabled."
+          }
+        },
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"Test User\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/signup/", "host": [ "{{base_url}}" ], "path": [ "auth", "signup/" ] },
+            "description": "Register a new user."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login/", "host": [ "{{base_url}}" ], "path": [ "auth", "login/" ] },
+            "description": "Login and receive an access token."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/auth/logout/", "host": [ "{{base_url}}" ], "path": [ "auth", "logout/" ] },
+            "description": "Logout the current user (token invalidation)."
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/auth/profile/", "host": [ "{{base_url}}" ], "path": [ "auth", "profile/" ] },
+            "description": "Get the authenticated user's profile."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/forgot-password/", "host": [ "{{base_url}}" ], "path": [ "auth", "forgot-password/" ] },
+            "description": "Initiate password reset."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"reset_token\",\n  \"newPassword\": \"new_password123\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/reset-password/", "host": [ "{{base_url}}" ], "path": [ "auth", "reset-password/" ] },
+            "description": "Reset password using a token."
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"oldPassword\": \"current_password\",\n  \"newPassword\": \"new_password123\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/change-password/", "host": [ "{{base_url}}" ], "path": [ "auth", "change-password/" ] },
+            "description": "Change password for the authenticated user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Partner Onboarding",
+      "item": [
+        {
+          "name": "Business Details (GET/POST/PATCH)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/partner/business-details/",
+              "host": [ "{{base_url}}" ],
+              "path": [ "partner", "business-details/" ],
+              "query": [ { "key": "user_id", "value": "", "description": "(Optional) For admin/privileged access" } ]
+            },
+            "description": "Get business details for the current or specified user."
+          }
+        },
+        {
+          "name": "Business Details (POST)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* business details fields */\n}" },
+            "url": { "raw": "{{base_url}}/partner/business-details/", "host": [ "{{base_url}}" ], "path": [ "partner", "business-details/" ] },
+            "description": "Create or update business details (upsert)."
+          }
+        },
+        {
+          "name": "Business Details (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* business details fields to update */\n}" },
+            "url": { "raw": "{{base_url}}/partner/business-details/", "host": [ "{{base_url}}" ], "path": [ "partner", "business-details/" ] },
+            "description": "Update business details (partial update)."
+          }
+        },
+        {
+          "name": "Location Coverage (GET/POST/PATCH)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/partner/location-coverage/",
+              "host": [ "{{base_url}}" ],
+              "path": [ "partner", "location-coverage/" ],
+              "query": [ { "key": "user_id", "value": "", "description": "(Optional) For admin/privileged access" } ]
+            },
+            "description": "Get location coverage for the current or specified user."
+          }
+        },
+        {
+          "name": "Location Coverage (POST)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* location coverage fields */\n}" },
+            "url": { "raw": "{{base_url}}/partner/location-coverage/", "host": [ "{{base_url}}" ], "path": [ "partner", "location-coverage/" ] },
+            "description": "Create or update location coverage (upsert)."
+          }
+        },
+        {
+          "name": "Location Coverage (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* location coverage fields to update */\n}" },
+            "url": { "raw": "{{base_url}}/partner/location-coverage/", "host": [ "{{base_url}}" ], "path": [ "partner", "location-coverage/" ] },
+            "description": "Update location coverage (partial update)."
+          }
+        },
+        {
+          "name": "Tours & Services (GET/POST/PATCH)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/partner/tours-services/",
+              "host": [ "{{base_url}}" ],
+              "path": [ "partner", "tours-services/" ],
+              "query": [ { "key": "user_id", "value": "", "description": "(Optional) For admin/privileged access" } ]
+            },
+            "description": "Get tours & services info for the current or specified user."
+          }
+        },
+        {
+          "name": "Tours & Services (POST)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* tours & services fields */\n}" },
+            "url": { "raw": "{{base_url}}/partner/tours-services/", "host": [ "{{base_url}}" ], "path": [ "partner", "tours-services/" ] },
+            "description": "Create or update tours & services info (upsert)."
+          }
+        },
+        {
+          "name": "Tours & Services (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* tours & services fields to update */\n}" },
+            "url": { "raw": "{{base_url}}/partner/tours-services/", "host": [ "{{base_url}}" ], "path": [ "partner", "tours-services/" ] },
+            "description": "Update tours & services info (partial update)."
+          }
+        },
+        {
+          "name": "Legal & Banking (GET/POST/PATCH)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/partner/legal-banking/",
+              "host": [ "{{base_url}}" ],
+              "path": [ "partner", "legal-banking/" ],
+              "query": [ { "key": "user_id", "value": "", "description": "(Optional) For admin/privileged access" } ]
+            },
+            "description": "Get legal & banking info for the current or specified user."
+          }
+        },
+        {
+          "name": "Legal & Banking (POST)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* legal & banking fields */\n}" },
+            "url": { "raw": "{{base_url}}/partner/legal-banking/", "host": [ "{{base_url}}" ], "path": [ "partner", "legal-banking/" ] },
+            "description": "Create or update legal & banking info (upsert)."
+          }
+        },
+        {
+          "name": "Legal & Banking (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  /* legal & banking fields to update */\n}" },
+            "url": { "raw": "{{base_url}}/partner/legal-banking/", "host": [ "{{base_url}}" ], "path": [ "partner", "legal-banking/" ] },
+            "description": "Update legal & banking info (partial update)."
+          }
+        },
+        {
+          "name": "Get Onboarding Status",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/partner/status/",
+              "host": [ "{{base_url}}" ],
+              "path": [ "partner", "status/" ],
+              "query": [ { "key": "user_id", "value": "", "description": "(Optional) For admin/privileged access" } ]
+            },
+            "description": "Get onboarding status for the current or specified user."
+          }
+        },
+        {
+          "name": "Complete Onboarding",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/partner/complete-onboarding/", "host": [ "{{base_url}}" ], "path": [ "partner", "complete-onboarding/" ] },
+            "description": "Mark onboarding as complete."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Common Data",
+      "item": [
+        {
+          "name": "Get Destinations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/common/destinations/", "host": [ "{{base_url}}" ], "path": [ "common", "destinations/" ] },
+            "description": "Get list of available destinations."
+          }
+        },
+        {
+          "name": "Get Languages",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/common/languages/", "host": [ "{{base_url}}" ], "path": [ "common", "languages/" ] },
+            "description": "Get list of available languages."
+          }
+        },
+        {
+          "name": "Get Tour Types",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/common/tour-types/", "host": [ "{{base_url}}" ], "path": [ "common", "tour-types/" ] },
+            "description": "Get list of available tour types."
+          }
+        },
+        {
+          "name": "Get Timezones",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/common/timezones/", "host": [ "{{base_url}}" ], "path": [ "common", "timezones/" ] },
+            "description": "Get list of available timezones."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "https://backend-api-vpx2.onrender.com/health/", "host": [ "https://backend-api-vpx2.onrender.com" ], "path": [ "health/" ] },
+            "description": "Simple health check endpoint."
+          }
+        }
+      ]
+    }
+  ]
+} 
