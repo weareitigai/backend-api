@@ -1,6 +1,17 @@
 from rest_framework import serializers
-from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking
+from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
 
+class TourSerializer(serializers.ModelSerializer):
+    """Serializer for tour information."""
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField()
+    description = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    startDate = serializers.DateField(source='start_date')
+    endDate = serializers.DateField(source='end_date')
+    class Meta:
+        model = Tour
+        fields = ['id', 'name', 'description', 'price', 'start_date', 'end_date']
 
 class BusinessDetailsSerializer(serializers.ModelSerializer):
     """Serializer for business details."""

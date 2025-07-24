@@ -3,12 +3,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking
+from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
 from .serializers import (
     BusinessDetailsSerializer, LocationCoverageSerializer,
     ToursServicesSerializer, LegalBankingSerializer, PartnerStatusSerializer,
     BusinessDetailsResponseSerializer, LocationCoverageResponseSerializer,
-    ToursServicesResponseSerializer, LegalBankingResponseSerializer
+    ToursServicesResponseSerializer, LegalBankingResponseSerializer, TourSerializer
 )
 
 
@@ -25,6 +25,12 @@ def get_partner_by_user_id(user_id):
         return Partner.objects.get(user=user)
     except (User.DoesNotExist, Partner.DoesNotExist):
         return None
+
+def get_verified_partner_by_user_id(user_id):
+    partner = get_partner_by_user_id(user_id)
+    if not partner or not partner.is_verified:
+        return None
+    return partner
 
 
 @extend_schema(
@@ -405,3 +411,56 @@ def complete_onboarding(request):
             'success': False,
             'message': 'Please complete all onboarding steps first'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def create_or_update_tour(request, user_id):
+    """Create a new tour (POST) or update an existing tour (PATCH) for a verified partner."""
+    partner = get_verified_partner_by_user_id(user_id)
+    if not partner:
+        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
+    if request.method == 'POST':
+        serializer = TourSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(partner=partner)
+            return Response({'success': True, 'data': serializer.data}, status=201)
+        return Response({'success': False, 'errors': serializer.errors}, status=400)
+    elif request.method == 'PATCH':
+        tour_id = request.data.get('id')
+        if not tour_id:
+            return Response({'success': False, 'message': 'Tour id is required for update.'}, status=400)
+        try:
+            tour = Tour.objects.get(id=tour_id, partner=partner)
+        except Tour.DoesNotExist:
+            return Response({'success': False, 'message': 'Tour not found.'}, status=404)
+        serializer = TourSerializer(tour, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'data': serializer.data}, status=200)
+        return Response({'success': False, 'errors': serializer.errors}, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_tours(request, user_id):
+    """Get all tours for a verified partner."""
+    partner = get_verified_partner_by_user_id(user_id)
+    if not partner:
+        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
+    tours = Tour.objects.filter(partner=partner)
+    serializer = TourSerializer(tours, many=True)
+    return Response({'success': True, 'data': serializer.data}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_tour_details(request, user_id, tour_id):
+    """Get details of a specific tour for a verified partner."""
+    partner = get_verified_partner_by_user_id(user_id)
+    if not partner:
+        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
+    try:
+        tour = Tour.objects.get(id=tour_id, partner=partner)
+    except Tour.DoesNotExist:
+        return Response({'success': False, 'message': 'Tour not found.'}, status=404)
+    serializer = TourSerializer(tour)
+    return Response({'success': True, 'data': serializer.data}, status=200)
