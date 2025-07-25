@@ -29,9 +29,9 @@ class BusinessDetailsAdmin(ImportExportModelAdmin):
 
 @admin.register(LocationCoverage)
 class LocationCoverageAdmin(ImportExportModelAdmin):
-    list_display = ['partner', 'primary_location', 'pan_india', 'timezone', 'created_at']
+    list_display = ['partner', 'city', 'state', 'pan_india', 'timezone', 'created_at']
     list_filter = ['pan_india', 'timezone', 'created_at']
-    search_fields = ['primary_location', 'partner__user__email']
+    search_fields = ['city', 'state', 'partner__user__email']
     ordering = ['-created_at']
     list_per_page = 25
     date_hierarchy = 'created_at'

@@ -2,16 +2,30 @@ from rest_framework import serializers
 from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
 
 class TourSerializer(serializers.ModelSerializer):
-    """Serializer for tour information."""
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField()
-    description = serializers.CharField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    startDate = serializers.DateField(source='start_date')
-    endDate = serializers.DateField(source='end_date')
+    destinations = serializers.ListField(child=serializers.CharField(), required=True)
+    durationDays = serializers.IntegerField(source='duration_days')
+    durationNights = serializers.IntegerField(source='duration_nights')
+    tourType = serializers.CharField(source='tour_type')
+    providerName = serializers.CharField(source='provider_name')
+    tourLink = serializers.URLField(source='tour_link')
+    contactLink = serializers.URLField(source='contact_link', required=False, allow_null=True)
+    title = serializers.CharField()
+
     class Meta:
         model = Tour
-        fields = ['id', 'name', 'description', 'price', 'start_date', 'end_date']
+        fields = [
+            'id',
+            'tourLink',
+            'title',
+            'destinations',
+            'durationDays',
+            'durationNights',
+            'tourType',
+            'providerName',
+            'contactLink',
+            'created_at',
+            'updated_at',
+        ]
 
 class BusinessDetailsSerializer(serializers.ModelSerializer):
     """Serializer for business details."""
@@ -34,14 +48,13 @@ class BusinessDetailsSerializer(serializers.ModelSerializer):
 
 class LocationCoverageSerializer(serializers.ModelSerializer):
     """Serializer for location and coverage information."""
-    primaryLocation = serializers.CharField(source='primary_location')
     panIndia = serializers.BooleanField(source='pan_india')
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
     
     class Meta:
         model = LocationCoverage
-        fields = ['primaryLocation', 'destinations', 'languages', 'regions', 
+        fields = ['city', 'state', 'destinations', 'languages', 'regions', 
                  'panIndia', 'seasons', 'timezone', 'createdAt', 'updatedAt']
 
 

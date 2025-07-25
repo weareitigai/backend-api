@@ -61,7 +61,8 @@ class BusinessDetails(models.Model):
 class LocationCoverage(models.Model):
     """Location and coverage information."""
     partner = models.OneToOneField(Partner, on_delete=models.CASCADE, related_name='location_coverage')
-    primary_location = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
     destinations = models.JSONField(default=list, help_text="Array of destination IDs")
     languages = models.JSONField(default=list, help_text="Array of languages")
     regions = models.JSONField(default=list, help_text="Array of regions")
@@ -72,7 +73,7 @@ class LocationCoverage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Coverage: {self.primary_location}"
+        return f"Coverage: {self.city}, {self.state}"
 
 
 class ToursServices(models.Model):
@@ -127,13 +128,21 @@ class LegalBanking(models.Model):
 
 class Tour(models.Model):
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE, related_name='tours')
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    tour_link = models.URLField(verbose_name='Tour Link (External URL)')
+    title = models.CharField(max_length=255, verbose_name='Tour Title')
+    destinations = models.JSONField(default=list, verbose_name='Destination(s)', help_text='List of destinations')
+    duration_days = models.PositiveIntegerField(verbose_name='Tour Duration (Days)')
+    duration_nights = models.PositiveIntegerField(verbose_name='Tour Duration (Nights)')
+    TOUR_TYPE_CHOICES = [
+        ('FIT', 'FIT'),
+        ('Group', 'Group'),
+        ('Customizable', 'Customizable'),
+    ]
+    tour_type = models.CharField(max_length=20, choices=TOUR_TYPE_CHOICES, verbose_name='Tour Type')
+    provider_name = models.CharField(max_length=255, verbose_name='Tour Provider Name')
+    contact_link = models.URLField(blank=True, null=True, verbose_name='Contact Link (Optional)')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} ({self.partner.user.email})"
+        return f"{self.title} ({self.partner.user.email})"
