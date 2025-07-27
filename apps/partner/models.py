@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from .validators import validate_document_file
+from .utils import get_secure_upload_path
 
 User = get_user_model()
 
@@ -100,7 +101,7 @@ class LegalBanking(models.Model):
     
     # File upload for PAN/Aadhaar document
     pan_or_aadhaar_file = models.FileField(
-        upload_to='pan_aadhaar_docs/', 
+        upload_to=get_secure_upload_path, 
         blank=True, 
         null=True,
         validators=[validate_document_file],
@@ -115,7 +116,7 @@ class LegalBanking(models.Model):
         help_text="PAN/Aadhaar number as text"
     )
     
-    business_proof_file = models.FileField(upload_to='business_proofs/', blank=True, null=True)
+    business_proof_file = models.FileField(upload_to=get_secure_upload_path, blank=True, null=True)
     license_number = models.CharField(max_length=100, blank=True, null=True)
     company_type = models.CharField(max_length=100)
     emergency_contact = models.CharField(max_length=15)
