@@ -63,7 +63,7 @@ class ToursServicesSerializer(serializers.ModelSerializer):
     numberOfTours = serializers.IntegerField(source='number_of_tours')
     typesOfTours = serializers.JSONField(source='types_of_tours')
     customTourType = serializers.CharField(source='custom_tour_type', required=False, allow_blank=True, allow_null=True)
-    minPrice = serializers.DecimalField(source='min_price', max_digits=10, decimal_places=2)
+    minPrice = serializers.DecimalField(source='min_price', max_digits=10, decimal_places=2, coerce_to_string=False)
     groupSizeMin = serializers.IntegerField(source='group_size_min')
     groupSizeMax = serializers.IntegerField(source='group_size_max')
     offersCustomTours = serializers.BooleanField(source='offers_custom_tours')
