@@ -36,6 +36,13 @@ def send_email_otp_view(request):
     if serializer.is_valid():
         email = serializer.validated_data['email']
         
+        # Check if user with this email already exists
+        if User.objects.filter(email=email).exists():
+            return Response({
+                'success': False,
+                'message': 'Account with this email already exists, please sign in'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # Create OTP verification
         otp_verification = create_otp_verification(email=email, otp_type='email')
         
@@ -110,6 +117,13 @@ def send_mobile_otp_view(request):
     serializer = SendMobileOTPSerializer(data=request.data)
     if serializer.is_valid():
         mobile = serializer.validated_data['mobile']
+        
+        # Check if user with this mobile number already exists
+        if User.objects.filter(mobile=mobile).exists():
+            return Response({
+                'success': False,
+                'message': 'Account with this mobile number already exists, please sign in'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         # Create OTP verification
         otp_verification = create_otp_verification(mobile=mobile, otp_type='mobile')
