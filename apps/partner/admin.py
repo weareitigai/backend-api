@@ -190,7 +190,7 @@ class LegalBankingAdmin(ImportExportModelAdmin):
     ordering = ['-created_at']
     list_per_page = 25
     date_hierarchy = 'created_at'
-    readonly_fields = ['created_at', 'updated_at', 'get_file_preview']
+    readonly_fields = ['created_at', 'updated_at', 'get_file_preview', 'get_detailed_file_preview']
     raw_id_fields = ['partner']
     list_editable = ['terms_accepted']
     
@@ -202,7 +202,7 @@ class LegalBankingAdmin(ImportExportModelAdmin):
             'fields': ('company_type', 'license_number')
         }),
         ('Documentation', {
-            'fields': ('pan_or_aadhaar_file', 'pan_or_aadhaar_text', 'business_proof_file', 'get_file_preview')
+            'fields': ('pan_or_aadhaar_file', 'pan_or_aadhaar_text', 'business_proof_file', 'get_detailed_file_preview')
         }),
         ('Contact Information', {
             'fields': ('emergency_contact', 'terms_accepted')
@@ -214,7 +214,48 @@ class LegalBankingAdmin(ImportExportModelAdmin):
     )
     
     def get_file_preview(self, obj):
-        """Display file preview in admin."""
+        """Display compact file preview in list view."""
+        preview_html = []
+        
+        if obj.pan_or_aadhaar_file:
+            file_name = obj.pan_or_aadhaar_file.name.split('/')[-1]
+            file_ext = file_name.split('.')[-1].lower()
+            
+            if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                preview_html.append(
+                    f'<div style="margin: 5px 0;"><strong>PAN:</strong> '
+                    f'<img src="{obj.pan_or_aadhaar_file.url}" style="max-width: 50px; max-height: 40px; border: 1px solid #ddd;" />'
+                    f'<br><small>{file_name[:20]}...</small></div>'
+                )
+            else:
+                preview_html.append(
+                    f'<div style="margin: 5px 0;"><strong>PAN:</strong> '
+                    f'<a href="{obj.pan_or_aadhaar_file.url}" target="_blank">📄 {file_name[:20]}...</a></div>'
+                )
+        
+        if obj.business_proof_file:
+            file_name = obj.business_proof_file.name.split('/')[-1]
+            file_ext = file_name.split('.')[-1].lower()
+            
+            if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                preview_html.append(
+                    f'<div style="margin: 5px 0;"><strong>BP:</strong> '
+                    f'<img src="{obj.business_proof_file.url}" style="max-width: 50px; max-height: 40px; border: 1px solid #ddd;" />'
+                    f'<br><small>{file_name[:20]}...</small></div>'
+                )
+            else:
+                preview_html.append(
+                    f'<div style="margin: 5px 0;"><strong>BP:</strong> '
+                    f'<a href="{obj.business_proof_file.url}" target="_blank">📄 {file_name[:20]}...</a></div>'
+                )
+        
+        if not preview_html:
+            return "No files"
+        
+        return format_html(''.join(preview_html))
+    
+    def get_detailed_file_preview(self, obj):
+        """Display detailed file preview in detail view."""
         preview_html = []
         
         if obj.pan_or_aadhaar_file:
@@ -224,14 +265,20 @@ class LegalBankingAdmin(ImportExportModelAdmin):
             
             if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
                 preview_html.append(
-                    f'<div style="margin: 10px 0;"><strong>PAN/Aadhaar:</strong><br>'
-                    f'<img src="{file_url}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;" />'
-                    f'<br><small>{file_name}</small></div>'
+                    f'<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">'
+                    f'<strong>PAN/Aadhaar Document:</strong><br>'
+                    f'<img src="{file_url}" style="max-width: 300px; max-height: 200px; border: 2px solid #007bff; border-radius: 5px; margin: 10px 0;" />'
+                    f'<br><small style="color: #666;">📁 {file_name}</small>'
+                    f'<br><a href="{file_url}" target="_blank" style="color: #007bff;">🔗 Open Full Size</a>'
+                    f'</div>'
                 )
             else:
                 preview_html.append(
-                    f'<div style="margin: 10px 0;"><strong>PAN/Aadhaar:</strong><br>'
-                    f'<a href="{file_url}" target="_blank">{file_name}</a></div>'
+                    f'<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">'
+                    f'<strong>PAN/Aadhaar Document:</strong><br>'
+                    f'<a href="{file_url}" target="_blank" style="color: #007bff; text-decoration: none; font-size: 16px;">📄 {file_name}</a>'
+                    f'<br><small style="color: #666;">Click to download/view</small>'
+                    f'</div>'
                 )
         
         if obj.business_proof_file:
@@ -241,20 +288,28 @@ class LegalBankingAdmin(ImportExportModelAdmin):
             
             if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
                 preview_html.append(
-                    f'<div style="margin: 10px 0;"><strong>Business Proof:</strong><br>'
-                    f'<img src="{file_url}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;" />'
-                    f'<br><small>{file_name}</small></div>'
+                    f'<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">'
+                    f'<strong>Business Proof Document:</strong><br>'
+                    f'<img src="{file_url}" style="max-width: 300px; max-height: 200px; border: 2px solid #28a745; border-radius: 5px; margin: 10px 0;" />'
+                    f'<br><small style="color: #666;">📁 {file_name}</small>'
+                    f'<br><a href="{file_url}" target="_blank" style="color: #28a745;">🔗 Open Full Size</a>'
+                    f'</div>'
                 )
             else:
                 preview_html.append(
-                    f'<div style="margin: 10px 0;"><strong>Business Proof:</strong><br>'
-                    f'<a href="{file_url}" target="_blank">{file_name}</a></div>'
+                    f'<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">'
+                    f'<strong>Business Proof Document:</strong><br>'
+                    f'<a href="{file_url}" target="_blank" style="color: #28a745; text-decoration: none; font-size: 16px;">📄 {file_name}</a>'
+                    f'<br><small style="color: #666;">Click to download/view</small>'
+                    f'</div>'
                 )
         
         if not preview_html:
-            return "No files uploaded"
+            return format_html('<div style="color: #999; font-style: italic;">No files uploaded</div>')
         
         return format_html(''.join(preview_html))
     
     get_file_preview.short_description = 'File Preview'
     get_file_preview.allow_tags = True
+    get_detailed_file_preview.short_description = 'File Preview'
+    get_detailed_file_preview.allow_tags = True
