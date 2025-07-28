@@ -183,14 +183,14 @@ class ToursServicesAdmin(ImportExportModelAdmin):
 class LegalBankingAdmin(ImportExportModelAdmin):
     list_display = [
         'partner', 'company_type', 'pan_or_aadhaar_text', 'license_number', 
-        'emergency_contact', 'terms_accepted', 'created_at'
+        'emergency_contact', 'terms_accepted', 'get_file_preview', 'created_at'
     ]
     list_filter = ['company_type', 'terms_accepted', 'created_at']
     search_fields = ['partner__user__email', 'pan_or_aadhaar_text', 'license_number']
     ordering = ['-created_at']
     list_per_page = 25
     date_hierarchy = 'created_at'
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at', 'get_file_preview']
     raw_id_fields = ['partner']
     list_editable = ['terms_accepted']
     
@@ -202,7 +202,7 @@ class LegalBankingAdmin(ImportExportModelAdmin):
             'fields': ('company_type', 'license_number')
         }),
         ('Documentation', {
-            'fields': ('pan_or_aadhaar_file', 'pan_or_aadhaar_text', 'business_proof_file')
+            'fields': ('pan_or_aadhaar_file', 'pan_or_aadhaar_text', 'business_proof_file', 'get_file_preview')
         }),
         ('Contact Information', {
             'fields': ('emergency_contact', 'terms_accepted')
@@ -212,3 +212,49 @@ class LegalBankingAdmin(ImportExportModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def get_file_preview(self, obj):
+        """Display file preview in admin."""
+        preview_html = []
+        
+        if obj.pan_or_aadhaar_file:
+            file_url = obj.pan_or_aadhaar_file.url
+            file_name = obj.pan_or_aadhaar_file.name.split('/')[-1]
+            file_ext = file_name.split('.')[-1].lower()
+            
+            if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                preview_html.append(
+                    f'<div style="margin: 10px 0;"><strong>PAN/Aadhaar:</strong><br>'
+                    f'<img src="{file_url}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;" />'
+                    f'<br><small>{file_name}</small></div>'
+                )
+            else:
+                preview_html.append(
+                    f'<div style="margin: 10px 0;"><strong>PAN/Aadhaar:</strong><br>'
+                    f'<a href="{file_url}" target="_blank">{file_name}</a></div>'
+                )
+        
+        if obj.business_proof_file:
+            file_url = obj.business_proof_file.url
+            file_name = obj.business_proof_file.name.split('/')[-1]
+            file_ext = file_name.split('.')[-1].lower()
+            
+            if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                preview_html.append(
+                    f'<div style="margin: 10px 0;"><strong>Business Proof:</strong><br>'
+                    f'<img src="{file_url}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;" />'
+                    f'<br><small>{file_name}</small></div>'
+                )
+            else:
+                preview_html.append(
+                    f'<div style="margin: 10px 0;"><strong>Business Proof:</strong><br>'
+                    f'<a href="{file_url}" target="_blank">{file_name}</a></div>'
+                )
+        
+        if not preview_html:
+            return "No files uploaded"
+        
+        return format_html(''.join(preview_html))
+    
+    get_file_preview.short_description = 'File Preview'
+    get_file_preview.allow_tags = True

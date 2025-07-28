@@ -2,8 +2,78 @@ import os
 import hashlib
 import base64
 import uuid
+import time
+import logging
 from datetime import datetime
 from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+
+def log_performance_metric(operation, duration, file_size=None):
+    """Log performance metrics for monitoring."""
+    logger.info(f"Performance: {operation} took {duration:.2f}s" + 
+                (f" for {file_size} bytes" if file_size else ""))
+
+
+def optimize_file_upload(file_obj, user_id, file_type):
+    """
+    Optimized file upload with performance monitoring.
+    
+    Args:
+        file_obj: Uploaded file object
+        user_id (int): User ID for organization
+        file_type (str): Type of file
+    
+    Returns:
+        str: Optimized file path
+    """
+    start_time = time.time()
+    
+    try:
+        # Generate secure path
+        encoded_path = get_secure_upload_path(None, file_obj.name)
+        
+        # Use Django's default storage for efficient file handling
+        file_path = default_storage.save(encoded_path, ContentFile(file_obj.read()))
+        
+        # Log performance
+        duration = time.time() - start_time
+        log_performance_metric(f"File upload ({file_type})", duration, file_obj.size)
+        
+        return file_path
+        
+    except Exception as e:
+        logger.error(f"File upload error: {str(e)}")
+        raise
+
+
+def get_secure_upload_path(instance, filename):
+    """
+    Django upload_to function for secure file paths.
+    
+    Args:
+        instance: Model instance
+        filename: Original filename
+    
+    Returns:
+        str: Secure file path
+    """
+    # Determine file type based on model field
+    if hasattr(instance, 'pan_or_aadhaar_file') and instance.pan_or_aadhaar_file:
+        file_type = 'pan_aadhaar_docs'
+    elif hasattr(instance, 'business_proof_file') and instance.business_proof_file:
+        file_type = 'business_proofs'
+    else:
+        file_type = 'documents'
+    
+    # Get user ID from partner
+    user_id = instance.partner.user.id if instance.partner and instance.partner.user else 0
+    
+    return encode_file_path(filename, user_id, file_type)
 
 
 def encode_file_path(original_filename, user_id, file_type):
@@ -79,31 +149,6 @@ def decode_file_info(encoded_path):
         pass
     
     return None
-
-
-def get_secure_upload_path(instance, filename):
-    """
-    Django upload_to function for secure file paths.
-    
-    Args:
-        instance: Model instance
-        filename: Original filename
-    
-    Returns:
-        str: Secure file path
-    """
-    # Determine file type based on model field
-    if hasattr(instance, 'pan_or_aadhaar_file') and instance.pan_or_aadhaar_file:
-        file_type = 'pan_aadhaar_docs'
-    elif hasattr(instance, 'business_proof_file') and instance.business_proof_file:
-        file_type = 'business_proofs'
-    else:
-        file_type = 'documents'
-    
-    # Get user ID from partner
-    user_id = instance.partner.user.id if instance.partner and instance.partner.user else 0
-    
-    return encode_file_path(filename, user_id, file_type)
 
 
 def generate_sample_encoded_paths():

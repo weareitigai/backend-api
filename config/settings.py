@@ -144,9 +144,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
+# File upload settings - Optimized for performance
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2MB - Reduced for faster processing
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024   # 2MB - Reduced for faster processing
+FILE_UPLOAD_TEMP_DIR = BASE_DIR / 'temp'  # Temporary directory for file processing
+FILE_UPLOAD_PERMISSIONS = 0o644  # File permissions
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755  # Directory permissions
+
+# Create temp directory if it doesn't exist
+import os
+if not os.path.exists(FILE_UPLOAD_TEMP_DIR):
+    os.makedirs(FILE_UPLOAD_TEMP_DIR, exist_ok=True)
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

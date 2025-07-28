@@ -1,17 +1,24 @@
-from rest_framework import status
+import time
+import logging
+from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
 from .serializers import (
-    BusinessDetailsSerializer, LocationCoverageSerializer,
-    ToursServicesSerializer, LegalBankingSerializer, PartnerStatusSerializer,
-    BusinessDetailsResponseSerializer, LocationCoverageResponseSerializer,
-    ToursServicesResponseSerializer, LegalBankingResponseSerializer, TourSerializer,
-    TourScrapingRequestSerializer, TourScrapingResponseSerializer
+    BusinessDetailsSerializer, BusinessDetailsResponseSerializer,
+    LocationCoverageSerializer, LocationCoverageResponseSerializer,
+    ToursServicesSerializer, ToursServicesResponseSerializer,
+    LegalBankingSerializer, LegalBankingResponseSerializer,
+    PartnerStatusSerializer, TourScrapingRequestSerializer, TourScrapingResponseSerializer, TourSerializer
 )
+from .utils import optimize_file_upload, log_performance_metric
 from .scraping_service import TourScrapingService
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 def get_or_create_partner(user):
@@ -19,20 +26,21 @@ def get_or_create_partner(user):
     partner, created = Partner.objects.get_or_create(user=user)
     return partner
 
+
 def get_partner_by_user_id(user_id):
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
+    """Get partner by user ID."""
     try:
-        user = User.objects.get(id=user_id)
-        return Partner.objects.get(user=user)
-    except (User.DoesNotExist, Partner.DoesNotExist):
+        return Partner.objects.get(user_id=user_id)
+    except Partner.DoesNotExist:
         return None
 
+
 def get_verified_partner_by_user_id(user_id):
-    partner = get_partner_by_user_id(user_id)
-    if not partner or not partner.is_verified:
+    """Get verified partner by user ID."""
+    try:
+        return Partner.objects.get(user_id=user_id, is_verified=True)
+    except Partner.DoesNotExist:
         return None
-    return partner
 
 
 @extend_schema(
@@ -193,7 +201,7 @@ def location_coverage_view(request):
             location_coverage = serializer.save(partner=partner)
             return Response({
                 'success': True,
-                'message': 'Location and coverage updated successfully'
+                'message': 'Location coverage updated successfully'
             }, status=status.HTTP_200_OK)
         
         return Response({
@@ -244,7 +252,7 @@ def tours_services_view(request):
                 tours_services = serializer.save(partner=partner)
                 return Response({
                     'success': True,
-                    'message': 'Tours services updated successfully'
+                    'message': 'Tours and services updated successfully'
                 }, status=status.HTTP_200_OK)
         except ToursServices.DoesNotExist:
             # If doesn't exist, create new record
@@ -253,7 +261,7 @@ def tours_services_view(request):
                 tours_services = serializer.save(partner=partner)
                 return Response({
                     'success': True,
-                    'message': 'Tours services created successfully'
+                    'message': 'Tours and services created successfully'
                 }, status=status.HTTP_201_CREATED)
         
         return Response({
@@ -270,7 +278,7 @@ def tours_services_view(request):
         except ToursServices.DoesNotExist:
             return Response({
                 'success': False,
-                'message': 'Tours services not found. Use POST to create first.'
+                'message': 'Tours and services not found. Use POST to create first.'
             }, status=status.HTTP_404_NOT_FOUND)
         
         if serializer.is_valid():
@@ -295,6 +303,8 @@ def tours_services_view(request):
 @permission_classes([IsAuthenticated])
 def legal_banking_view(request):
     """Get or update legal and banking information."""
+    start_time = time.time()
+    
     user_id = request.query_params.get('user_id')
     if user_id:
         partner = get_partner_by_user_id(user_id)
@@ -307,6 +317,11 @@ def legal_banking_view(request):
         try:
             legal_banking = partner.legal_banking
             serializer = LegalBankingSerializer(legal_banking)
+            
+            # Log performance
+            duration = time.time() - start_time
+            log_performance_metric("Legal banking GET", duration)
+            
             return Response({
                 'success': True,
                 'data': serializer.data
@@ -320,37 +335,112 @@ def legal_banking_view(request):
     elif request.method == 'POST':
         # Create or update legal banking (upsert behavior)
         try:
+            # Handle file uploads efficiently
+            data = request.data.copy()
+            
+            # Process file uploads if present
+            if 'panOrAadhaarFile' in request.FILES:
+                file_obj = request.FILES['panOrAadhaarFile']
+                try:
+                    optimized_path = optimize_file_upload(file_obj, partner.user.id, 'pan_aadhaar_docs')
+                    data['pan_or_aadhaar_file'] = optimized_path
+                except Exception as e:
+                    logger.error(f"PAN/Aadhaar file upload error: {str(e)}")
+                    return Response({
+                        'success': False,
+                        'message': f'File upload failed: {str(e)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if 'businessProofFile' in request.FILES:
+                file_obj = request.FILES['businessProofFile']
+                try:
+                    optimized_path = optimize_file_upload(file_obj, partner.user.id, 'business_proofs')
+                    data['business_proof_file'] = optimized_path
+                except Exception as e:
+                    logger.error(f"Business proof file upload error: {str(e)}")
+                    return Response({
+                        'success': False,
+                        'message': f'File upload failed: {str(e)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Try to get existing legal banking
-            legal_banking = partner.legal_banking
-            # If exists, update it
-            serializer = LegalBankingSerializer(legal_banking, data=request.data, partial=True)
-            if serializer.is_valid():
-                legal_banking = serializer.save(partner=partner)
-                return Response({
-                    'success': True,
-                    'message': 'Legal banking details updated successfully'
-                }, status=status.HTTP_200_OK)
-        except LegalBanking.DoesNotExist:
-            # If doesn't exist, create new record
-            serializer = LegalBankingSerializer(data=request.data)
-            if serializer.is_valid():
-                legal_banking = serializer.save(partner=partner)
-                return Response({
-                    'success': True,
-                    'message': 'Legal banking details created successfully'
-                }, status=status.HTTP_201_CREATED)
-        
-        return Response({
-            'success': False,
-            'message': 'Invalid data provided',
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                legal_banking = partner.legal_banking
+                # If exists, update it
+                serializer = LegalBankingSerializer(legal_banking, data=data, partial=True)
+                if serializer.is_valid():
+                    legal_banking = serializer.save(partner=partner)
+                    
+                    # Log performance
+                    duration = time.time() - start_time
+                    log_performance_metric("Legal banking POST (update)", duration)
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'Legal banking details updated successfully'
+                    }, status=status.HTTP_200_OK)
+            except LegalBanking.DoesNotExist:
+                # If doesn't exist, create new record
+                serializer = LegalBankingSerializer(data=data)
+                if serializer.is_valid():
+                    legal_banking = serializer.save(partner=partner)
+                    
+                    # Log performance
+                    duration = time.time() - start_time
+                    log_performance_metric("Legal banking POST (create)", duration)
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'Legal banking details created successfully'
+                    }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            logger.error(f"Legal banking POST error: {str(e)}")
+            return Response({
+                'success': False,
+                'message': f'An error occurred: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     elif request.method == 'PATCH':
         # Update existing legal banking
         try:
             legal_banking = partner.legal_banking
-            serializer = LegalBankingSerializer(legal_banking, data=request.data, partial=True)
+            
+            # Handle file uploads efficiently
+            data = request.data.copy()
+            
+            # Process file uploads if present
+            if 'panOrAadhaarFile' in request.FILES:
+                file_obj = request.FILES['panOrAadhaarFile']
+                try:
+                    optimized_path = optimize_file_upload(file_obj, partner.user.id, 'pan_aadhaar_docs')
+                    data['pan_or_aadhaar_file'] = optimized_path
+                except Exception as e:
+                    logger.error(f"PAN/Aadhaar file upload error: {str(e)}")
+                    return Response({
+                        'success': False,
+                        'message': f'File upload failed: {str(e)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if 'businessProofFile' in request.FILES:
+                file_obj = request.FILES['businessProofFile']
+                try:
+                    optimized_path = optimize_file_upload(file_obj, partner.user.id, 'business_proofs')
+                    data['business_proof_file'] = optimized_path
+                except Exception as e:
+                    logger.error(f"Business proof file upload error: {str(e)}")
+                    return Response({
+                        'success': False,
+                        'message': f'File upload failed: {str(e)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = LegalBankingSerializer(legal_banking, data=data, partial=True)
         except LegalBanking.DoesNotExist:
             return Response({
                 'success': False,
@@ -359,6 +449,11 @@ def legal_banking_view(request):
         
         if serializer.is_valid():
             legal_banking = serializer.save(partner=partner)
+            
+            # Log performance
+            duration = time.time() - start_time
+            log_performance_metric("Legal banking PATCH", duration)
+            
             return Response({
                 'success': True,
                 'message': 'Legal and banking details updated successfully'
