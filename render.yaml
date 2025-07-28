@@ -16,7 +16,7 @@ services:
           name: travel-partner-db
           property: connectionString
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.0"
 
 databases:
   # PostgreSQL Database
