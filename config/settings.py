@@ -286,3 +286,6 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+# OpenAI Configuration (optional - for enhanced scraping)
+OPENAI_API_KEY = config('OPENAI_API_KEY', default=None)

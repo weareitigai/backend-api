@@ -20,4 +20,7 @@ urlpatterns = [
     path('user/<int:user_id>/tours/', views.get_all_tours, name='get-all-tours'),
     path('user/<int:user_id>/tours/create/', views.create_or_update_tour, name='create-or-update-tour'),
     path('user/<int:user_id>/tours/<int:tour_id>/', views.get_tour_details, name='get-tour-details'),
+    
+    # Web Scraping
+    path('scrape-tour-details/', views.scrape_tour_details, name='scrape-tour-details'),
 ]

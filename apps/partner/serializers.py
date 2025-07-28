@@ -148,3 +148,15 @@ class LegalBankingResponseSerializer(serializers.Serializer):
     success = serializers.BooleanField()
     message = serializers.CharField(required=False)
     data = LegalBankingSerializer()
+
+
+class TourScrapingRequestSerializer(serializers.Serializer):
+    """Serializer for tour scraping request."""
+    url = serializers.URLField(help_text="URL of the tour page to scrape")
+
+
+class TourScrapingResponseSerializer(serializers.Serializer):
+    """Serializer for tour scraping response."""
+    success = serializers.BooleanField()
+    data = serializers.DictField()
+    message = serializers.CharField()

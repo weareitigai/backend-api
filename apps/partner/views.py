@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
@@ -8,8 +8,10 @@ from .serializers import (
     BusinessDetailsSerializer, LocationCoverageSerializer,
     ToursServicesSerializer, LegalBankingSerializer, PartnerStatusSerializer,
     BusinessDetailsResponseSerializer, LocationCoverageResponseSerializer,
-    ToursServicesResponseSerializer, LegalBankingResponseSerializer, TourSerializer
+    ToursServicesResponseSerializer, LegalBankingResponseSerializer, TourSerializer,
+    TourScrapingRequestSerializer, TourScrapingResponseSerializer
 )
+from .scraping_service import TourScrapingService
 
 
 def get_or_create_partner(user):
@@ -464,3 +466,54 @@ def get_tour_details(request, user_id, tour_id):
         return Response({'success': False, 'message': 'Tour not found.'}, status=404)
     serializer = TourSerializer(tour)
     return Response({'success': True, 'data': serializer.data}, status=200)
+
+
+@extend_schema(
+    request=TourScrapingRequestSerializer,
+    responses={200: TourScrapingResponseSerializer}
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def scrape_tour_details(request):
+    """Scrape tour details from a URL."""
+    url = request.data.get('url')
+    
+    if not url:
+        return Response({
+            'success': False,
+            'message': 'URL is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate URL format
+    if not url.startswith(('http://', 'https://')):
+        return Response({
+            'success': False,
+            'message': 'Invalid URL format. Please provide a complete URL starting with http:// or https://'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Initialize scraping service
+        scraping_service = TourScrapingService()
+        
+        # Extract tour details
+        result = scraping_service.extract_tour_details(url)
+        
+        if result.get('success'):
+            return Response({
+                'success': True,
+                'data': result['data'],
+                'message': 'Tour details extracted successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'message': result.get('error', 'Failed to extract tour details'),
+                'data': {}
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'An error occurred while scraping: {str(e)}',
+            'data': {}
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
