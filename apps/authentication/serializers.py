@@ -1,11 +1,19 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User, OTPVerification
+from .utils import validate_email_exists
 
 
 class SendEmailOTPSerializer(serializers.Serializer):
     """Serializer for sending email OTP."""
-    email = serializers.EmailField()
+    email = serializers.CharField(max_length=100)
+    
+    def validate_email(self, value):
+        # Comprehensive email validation
+        is_valid, error_message = validate_email_exists(value)
+        if not is_valid:
+            raise serializers.ValidationError(error_message)
+        return value
 
 
 class VerifyEmailOTPSerializer(serializers.Serializer):
@@ -30,15 +38,28 @@ class UserSignupSerializer(serializers.ModelSerializer):
     firstName = serializers.CharField(source='first_name', max_length=30)
     lastName = serializers.CharField(source='last_name', max_length=30)
     companyName = serializers.CharField(max_length=255)
-    password = serializers.CharField(write_only=True, min_length=8)
+    email = serializers.EmailField(max_length=100)
+    password = serializers.CharField(write_only=True, min_length=6)
     
     class Meta:
         model = User
         fields = ['firstName', 'lastName', 'companyName', 'email', 'mobile', 'password']
     
     def validate_email(self, value):
+        # Comprehensive email validation
+        is_valid, error_message = validate_email_exists(value)
+        if not is_valid:
+            raise serializers.ValidationError(error_message)
+        
+        # Check if user already exists
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email already exists.")
+        return value
+    
+    def validate_password(self, value):
+        # Password validation
+        if len(value) < 6:
+            raise serializers.ValidationError("Password must be at least 6 characters long.")
         return value
     
     def validate_mobile(self, value):
@@ -124,7 +145,7 @@ class ResetPasswordSerializer(serializers.Serializer):
     """Serializer for password reset."""
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
-    newPassword = serializers.CharField(min_length=8)
+    newPassword = serializers.CharField(min_length=6)
     
     def validate(self, attrs):
         email = attrs.get('email')
@@ -174,7 +195,7 @@ class UserAuthResponseSerializer(serializers.Serializer):
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for changing user password."""
     currentPassword = serializers.CharField(write_only=True)
-    newPassword = serializers.CharField(write_only=True, min_length=8)
+    newPassword = serializers.CharField(write_only=True, min_length=6)
     confirmPassword = serializers.CharField(write_only=True)
     
     def validate_currentPassword(self, value):

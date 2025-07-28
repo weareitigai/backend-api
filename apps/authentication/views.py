@@ -15,8 +15,9 @@ from .serializers import (
 )
 from .utils import (
     create_otp_verification, verify_otp,
-    send_email_otp, send_mobile_otp
+    send_email_otp, send_mobile_otp, validate_email_exists
 )
+from .rate_limiting import rate_limit_otp_request
 import logging
 from django.conf import settings
 
@@ -36,12 +37,25 @@ def send_email_otp_view(request):
     if serializer.is_valid():
         email = serializer.validated_data['email']
         
+        # Validate email format and domain
+        is_valid, error_message = validate_email_exists(email)
+        if not is_valid:
+            return Response({
+                'success': False,
+                'message': error_message
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # Check if user with this email already exists
         if User.objects.filter(email=email).exists():
             return Response({
                 'success': False,
                 'message': 'Account with this email already exists, please sign in'
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check rate limiting
+        is_allowed, rate_limit_data, status_code = rate_limit_otp_request(email, 'email')
+        if not is_allowed:
+            return Response(rate_limit_data, status=status_code)
         
         # Create OTP verification
         otp_verification = create_otp_verification(email=email, otp_type='email')
@@ -124,6 +138,11 @@ def send_mobile_otp_view(request):
                 'success': False,
                 'message': 'Account with this mobile number already exists, please sign in'
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check rate limiting
+        is_allowed, rate_limit_data, status_code = rate_limit_otp_request(mobile, 'mobile')
+        if not is_allowed:
+            return Response(rate_limit_data, status=status_code)
         
         # Create OTP verification
         otp_verification = create_otp_verification(mobile=mobile, otp_type='mobile')

@@ -129,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
@@ -274,3 +274,15 @@ OTP_EXPIRY_MINUTES = 10
 
 # Feature Flags
 MOBILE_OTP_ENABLED = config('MOBILE_OTP_ENABLED', default=False, cast=bool)  # Temporarily disabled
+
+# Rate Limiting Configuration
+RATE_LIMIT_OTP_REQUESTS = 3  # Maximum OTP requests per hour
+RATE_LIMIT_OTP_WINDOW = 3600  # Time window in seconds (1 hour)
+
+# Cache Configuration for Rate Limiting
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}

@@ -1,5 +1,7 @@
 import random
 import string
+import dns.resolver
+import re
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import OTPVerification
@@ -22,6 +24,69 @@ except ImportError:
 def generate_otp(length=6):
     """Generate a random OTP of specified length."""
     return ''.join(random.choices(string.digits, k=length))
+
+
+def validate_email_format(email):
+    """
+    Validate email format using regex.
+    
+    Args:
+        email (str): Email address to validate
+        
+    Returns:
+        bool: True if email format is valid, False otherwise
+    """
+    # Basic email regex pattern
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+
+def validate_email_domain(email):
+    """
+    Validate that the email domain has valid MX records.
+    
+    Args:
+        email (str): Email address to validate
+        
+    Returns:
+        bool: True if domain has valid MX records, False otherwise
+    """
+    try:
+        # Extract domain from email
+        domain = email.split('@')[1]
+        
+        # Check for MX records
+        mx_records = dns.resolver.resolve(domain, 'MX')
+        return len(mx_records) > 0
+    except (IndexError, dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.Timeout):
+        return False
+    except Exception:
+        return False
+
+
+def validate_email_exists(email):
+    """
+    Comprehensive email validation including format and domain check.
+    
+    Args:
+        email (str): Email address to validate
+        
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    # Check email format
+    if not validate_email_format(email):
+        return False, "Invalid email format"
+    
+    # Check email length
+    if len(email) > 100:
+        return False, "Email address cannot exceed 100 characters"
+    
+    # Check domain validity
+    if not validate_email_domain(email):
+        return False, "Invalid email domain or domain does not exist"
+    
+    return True, "Email is valid"
 
 
 def send_email_otp(email, otp):
