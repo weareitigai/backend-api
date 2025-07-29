@@ -8,6 +8,7 @@ cmds = ['pip install -r requirements.txt']
 cmds = [
   'python3 manage.py migrate',
   'python3 manage.py collectstatic --noinput',
+  'python3 manage.py setup_media',
   'python3 manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username=\'admin\').exists() or User.objects.create_superuser(\'admin\', \'admin@example.com\', \'admin\')"'
 ]
 
