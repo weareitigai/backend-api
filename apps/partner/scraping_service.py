@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import logging
 from typing import Dict, Any, Optional
 from django.conf import settings
-from firecrawl import FirecrawlApp, JsonConfig
+from firecrawl import FirecrawlApp
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -55,15 +55,11 @@ class TourScrapingService:
             logger.info("Initializing Firecrawl...")
             app = FirecrawlApp(api_key=firecrawl_api_key)
             
-            # Configure JSON extraction
-            json_config = JsonConfig(schema=TourExtractionSchema)
-            
             # Scrape with Firecrawl
             logger.info("Scraping with Firecrawl...")
             scrape_result = app.scrape_url(
                 url,
-                formats=["json", "markdown"],
-                json_options=json_config,
+                formats=["markdown"],
                 only_main_content=False,
                 timeout=120000
             )
@@ -72,26 +68,167 @@ class TourScrapingService:
                 logger.error(f"Firecrawl scraping failed: {scrape_result.error}")
                 return self._manual_scraping_fallback(url)
             
-            # Extract the JSON data
-            if hasattr(scrape_result, 'json') and scrape_result.json:
-                logger.info("Successfully extracted structured data with Firecrawl")
-                extracted_data = scrape_result.json
+            # Extract the markdown data
+            if hasattr(scrape_result, 'markdown') and scrape_result.markdown:
+                logger.info("Successfully extracted markdown data with Firecrawl")
+                markdown_content = scrape_result.markdown
                 
-                # Clean and validate the data
-                cleaned_data = self._clean_extracted_data(extracted_data)
+                # Use AI to extract structured data from markdown
+                extracted_data = self._extract_from_markdown_with_ai(markdown_content, url)
                 
-                return {
-                    'success': True,
-                    'data': cleaned_data,
-                    'message': 'Tour details extracted successfully using Firecrawl'
-                }
+                if extracted_data:
+                    # Clean and validate the data
+                    cleaned_data = self._clean_extracted_data(extracted_data)
+                    
+                    return {
+                        'success': True,
+                        'data': cleaned_data,
+                        'message': 'Tour details extracted successfully using Firecrawl + AI'
+                    }
+                else:
+                    logger.warning("AI extraction failed, falling back to manual scraping")
+                    return self._manual_scraping_fallback(url)
             else:
-                logger.warning("No JSON data found in Firecrawl response, falling back to manual scraping")
+                logger.warning("No markdown data found in Firecrawl response, falling back to manual scraping")
                 return self._manual_scraping_fallback(url)
                 
         except Exception as e:
             logger.error(f"Error in Firecrawl extraction: {str(e)}")
             return self._manual_scraping_fallback(url)
+    
+    def _extract_from_markdown_with_ai(self, markdown_content: str, url: str) -> Dict[str, Any]:
+        """Extract structured tour data from markdown content using AI."""
+        try:
+            logger.info("Extracting structured data from markdown using AI...")
+            
+            # Get AI API key
+            openai_api_key = getattr(settings, 'OPENAI_API_KEY', None)
+            gemini_api_key = getattr(settings, 'GEMINI_API_KEY', None)
+            
+            if openai_api_key:
+                return self._extract_with_openai(markdown_content, url, openai_api_key)
+            elif gemini_api_key:
+                return self._extract_with_gemini(markdown_content, url, gemini_api_key)
+            else:
+                logger.warning("No AI API keys available for markdown extraction")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error extracting from markdown with AI: {str(e)}")
+            return None
+    
+    def _extract_with_openai(self, markdown_content: str, url: str, api_key: str) -> Dict[str, Any]:
+        """Extract tour data from markdown using OpenAI."""
+        try:
+            import openai
+            client = openai.OpenAI(api_key=api_key)
+            
+            prompt = f"""
+            Extract tour details from the following markdown content and return them as a JSON object.
+            
+            Markdown content:
+            {markdown_content[:3000]}
+            
+            URL: {url}
+            
+            Please extract and return the following information in JSON format:
+            {{
+                "title": "Tour title",
+                "destinations": ["destination1", "destination2"],
+                "duration_days": number,
+                "duration_nights": number,
+                "tour_type": "FIT|Group|Customizable",
+                "provider_name": "Provider name",
+                "contact_info": "contact details",
+                "price_info": "price information",
+                "description": "tour description"
+            }}
+            
+            Important:
+            - For destinations, only include actual city/destination names
+            - For duration, extract numeric values for days and nights
+            - For contact_info, include phone numbers and emails
+            - If any information is not available, use empty strings or 0 for numbers
+            """
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000,
+                temperature=0.3
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+            
+            # Try to parse JSON response
+            try:
+                import json
+                extracted_data = json.loads(ai_response)
+                logger.info("Successfully extracted data with OpenAI")
+                return extracted_data
+            except json.JSONDecodeError:
+                logger.error("Failed to parse OpenAI JSON response")
+                return None
+                
+        except Exception as e:
+            logger.error(f"OpenAI extraction failed: {str(e)}")
+            return None
+    
+    def _extract_with_gemini(self, markdown_content: str, url: str, api_key: str) -> Dict[str, Any]:
+        """Extract tour data from markdown using Gemini."""
+        try:
+            import google.generativeai as genai
+            
+            # Configure Gemini
+            genai.configure(api_key=api_key)
+            
+            prompt = f"""
+            Extract tour details from the following markdown content and return them as a JSON object.
+            
+            Markdown content:
+            {markdown_content[:3000]}
+            
+            URL: {url}
+            
+            Please extract and return the following information in JSON format:
+            {{
+                "title": "Tour title",
+                "destinations": ["destination1", "destination2"],
+                "duration_days": number,
+                "duration_nights": number,
+                "tour_type": "FIT|Group|Customizable",
+                "provider_name": "Provider name",
+                "contact_info": "contact details",
+                "price_info": "price information",
+                "description": "tour description"
+            }}
+            
+            Important:
+            - For destinations, only include actual city/destination names
+            - For duration, extract numeric values for days and nights
+            - For contact_info, include phone numbers and emails
+            - If any information is not available, use empty strings or 0 for numbers
+            """
+            
+            # Generate content using Gemini
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            response = model.generate_content(prompt)
+            
+            ai_response = response.text.strip()
+            
+            # Try to parse JSON response
+            try:
+                import json
+                extracted_data = json.loads(ai_response)
+                logger.info("Successfully extracted data with Gemini")
+                return extracted_data
+            except json.JSONDecodeError:
+                logger.error("Failed to parse Gemini JSON response")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Gemini extraction failed: {str(e)}")
+            return None
     
     def _manual_scraping_fallback(self, url: str) -> Dict[str, Any]:
         """Fallback to manual scraping when Firecrawl is not available."""
@@ -122,7 +259,7 @@ class TourScrapingService:
             }
     
     def _clean_extracted_data(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Clean and validate extracted data from Firecrawl."""
+        """Clean and validate extracted data from AI extraction."""
         try:
             # Convert to dict if it's a Pydantic model
             if hasattr(extracted_data, 'dict'):
