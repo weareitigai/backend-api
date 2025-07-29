@@ -6,8 +6,22 @@ from urllib.parse import urlparse
 import logging
 from typing import Dict, Any, Optional
 from django.conf import settings
+from firecrawl import FirecrawlApp, JsonConfig
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+class TourExtractionSchema(BaseModel):
+    """Schema for extracting tour details from web pages."""
+    title: str
+    destinations: list[str]
+    duration_days: int
+    duration_nights: int
+    tour_type: str  # "FIT", "Group", or "Customizable"
+    provider_name: str
+    contact_info: str
+    price_info: str = ""
+    description: str = ""
 
 class TourScrapingService:
     """Service for scraping tour details from URLs."""
@@ -20,7 +34,7 @@ class TourScrapingService:
     
     def extract_tour_details(self, url: str) -> Dict[str, Any]:
         """
-        Extract tour details from a given URL.
+        Extract tour details from a given URL using Firecrawl.
         
         Args:
             url (str): The URL to scrape
@@ -29,6 +43,61 @@ class TourScrapingService:
             Dict[str, Any]: Extracted tour details
         """
         try:
+            logger.info(f"Starting tour extraction for URL: {url}")
+            
+            # Get Firecrawl API key
+            firecrawl_api_key = getattr(settings, 'FIRECRAWL_API_KEY', None)
+            if not firecrawl_api_key:
+                logger.warning("No Firecrawl API key found, falling back to manual scraping")
+                return self._manual_scraping_fallback(url)
+            
+            # Initialize Firecrawl
+            logger.info("Initializing Firecrawl...")
+            app = FirecrawlApp(api_key=firecrawl_api_key)
+            
+            # Configure JSON extraction
+            json_config = JsonConfig(schema=TourExtractionSchema)
+            
+            # Scrape with Firecrawl
+            logger.info("Scraping with Firecrawl...")
+            scrape_result = app.scrape_url(
+                url,
+                formats=["json", "markdown"],
+                json_options=json_config,
+                only_main_content=False,
+                timeout=120000
+            )
+            
+            if not scrape_result.success:
+                logger.error(f"Firecrawl scraping failed: {scrape_result.error}")
+                return self._manual_scraping_fallback(url)
+            
+            # Extract the JSON data
+            if hasattr(scrape_result, 'json') and scrape_result.json:
+                logger.info("Successfully extracted structured data with Firecrawl")
+                extracted_data = scrape_result.json
+                
+                # Clean and validate the data
+                cleaned_data = self._clean_extracted_data(extracted_data)
+                
+                return {
+                    'success': True,
+                    'data': cleaned_data,
+                    'message': 'Tour details extracted successfully using Firecrawl'
+                }
+            else:
+                logger.warning("No JSON data found in Firecrawl response, falling back to manual scraping")
+                return self._manual_scraping_fallback(url)
+                
+        except Exception as e:
+            logger.error(f"Error in Firecrawl extraction: {str(e)}")
+            return self._manual_scraping_fallback(url)
+    
+    def _manual_scraping_fallback(self, url: str) -> Dict[str, Any]:
+        """Fallback to manual scraping when Firecrawl is not available."""
+        try:
+            logger.info("Using manual scraping fallback...")
+            
             # Fetch the webpage
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
@@ -45,11 +114,75 @@ class TourScrapingService:
             return enhanced_data
             
         except Exception as e:
-            logger.error(f"Error scraping URL {url}: {str(e)}")
+            logger.error(f"Error in manual scraping fallback: {str(e)}")
             return {
                 'success': False,
                 'error': f'Failed to scrape URL: {str(e)}',
                 'data': {}
+            }
+    
+    def _clean_extracted_data(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Clean and validate extracted data from Firecrawl."""
+        try:
+            # Convert to dict if it's a Pydantic model
+            if hasattr(extracted_data, 'dict'):
+                data = extracted_data.dict()
+            else:
+                data = extracted_data
+            
+            # Clean destinations
+            if 'destinations' in data and isinstance(data['destinations'], list):
+                cleaned_destinations = []
+                for dest in data['destinations']:
+                    if isinstance(dest, str) and dest.strip():
+                        clean_dest = re.sub(r'\s+', ' ', dest.strip())
+                        if clean_dest and len(clean_dest) > 2:
+                            cleaned_destinations.append(clean_dest)
+                data['destinations'] = cleaned_destinations
+            
+            # Clean contact info
+            if 'contact_info' in data and data['contact_info']:
+                contact_info = re.sub(r'\s+', ' ', data['contact_info'].strip())
+                data['contact_info'] = contact_info
+            
+            # Ensure numeric fields are integers
+            if 'duration_days' in data:
+                try:
+                    data['duration_days'] = int(data['duration_days'])
+                except (ValueError, TypeError):
+                    data['duration_days'] = 0
+            
+            if 'duration_nights' in data:
+                try:
+                    data['duration_nights'] = int(data['duration_nights'])
+                except (ValueError, TypeError):
+                    data['duration_nights'] = 0
+            
+            # Set defaults for missing fields
+            data.setdefault('title', '')
+            data.setdefault('destinations', [])
+            data.setdefault('duration_days', 0)
+            data.setdefault('duration_nights', 0)
+            data.setdefault('tour_type', 'FIT')
+            data.setdefault('provider_name', '')
+            data.setdefault('contact_info', '')
+            data.setdefault('price_info', '')
+            data.setdefault('description', '')
+            
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error cleaning extracted data: {str(e)}")
+            return {
+                'title': '',
+                'destinations': [],
+                'duration_days': 0,
+                'duration_nights': 0,
+                'tour_type': 'FIT',
+                'provider_name': '',
+                'contact_info': '',
+                'price_info': '',
+                'description': ''
             }
     
     def _extract_basic_info(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
@@ -108,23 +241,85 @@ class TourScrapingService:
             r'[\w\.-]+@[\w\.-]+\.\w+',  # Email addresses
         ]
         
+        # Get text content and clean it
         text_content = soup.get_text()
-        for pattern in contact_patterns:
-            matches = re.findall(pattern, text_content)
-            if matches:
-                data['contact_info'] = matches[0]
-                break
+        contact_info_parts = []
+        
+        # Extract phone numbers
+        phone_matches = re.findall(r'\+?[\d\s\-\(\)]{10,}', text_content)
+        if phone_matches:
+            # Clean and format phone numbers
+            for phone in phone_matches[:2]:  # Limit to first 2 phone numbers
+                cleaned_phone = re.sub(r'\s+', ' ', phone.strip())
+                if cleaned_phone and len(cleaned_phone) >= 10:
+                    contact_info_parts.append(cleaned_phone)
+        
+        # Extract email addresses
+        email_matches = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', text_content)
+        if email_matches:
+            for email in email_matches[:2]:  # Limit to first 2 emails
+                cleaned_email = email.strip()
+                if cleaned_email:
+                    contact_info_parts.append(cleaned_email)
+        
+        # Also look for contact information in specific elements
+        contact_selectors = [
+            '.contact', '.contact-info', '.phone', '.email', '.address',
+            '[class*="contact"]', '[class*="phone"]', '[class*="email"]',
+            '[class*="address"]', '.footer', '.header', '.contact-details',
+            '[id*="contact"]', '[id*="phone"]', '[id*="email"]'
+        ]
+        
+        for selector in contact_selectors:
+            elements = soup.select(selector)
+            for element in elements:
+                element_text = element.get_text(strip=True)
+                if element_text and len(element_text) > 5:
+                    # Check if it contains contact info
+                    if any(char.isdigit() for char in element_text) or '@' in element_text:
+                        # Clean the text
+                        cleaned_text = re.sub(r'\s+', ' ', element_text.strip())
+                        if cleaned_text and len(cleaned_text) > 5:
+                            contact_info_parts.append(cleaned_text)
+        
+        # Also check for contact info in links (tel: and mailto:)
+        contact_links = soup.find_all('a', href=True)
+        for link in contact_links:
+            href = link.get('href', '')
+            if href.startswith('tel:') or href.startswith('mailto:'):
+                link_text = link.get_text(strip=True)
+                if link_text:
+                    contact_info_parts.append(link_text)
+        
+        # Combine all contact information
+        if contact_info_parts:
+            data['contact_info'] = ' | '.join(contact_info_parts[:3])  # Limit to 3 items
+        else:
+            data['contact_info'] = ''
         
         return data
     
     def _enhance_with_ai(self, extracted_data: Dict[str, Any], page_text: str) -> Dict[str, Any]:
         """Use AI to enhance and structure the extracted data."""
         try:
-            # Initialize OpenAI client (you'll need to add OPENAI_API_KEY to settings)
-            api_key = getattr(settings, 'OPENAI_API_KEY', None)
-            if not api_key:
-                return self._fallback_enhancement(extracted_data)
+            # Try OpenAI first, then Gemini as fallback
+            openai_api_key = getattr(settings, 'OPENAI_API_KEY', None)
+            gemini_api_key = getattr(settings, 'GEMINI_API_KEY', None)
             
+            if openai_api_key:
+                return self._enhance_with_openai(extracted_data, page_text, openai_api_key)
+            elif gemini_api_key:
+                return self._enhance_with_gemini(extracted_data, page_text, gemini_api_key)
+            else:
+                return self._fallback_enhancement(extracted_data)
+                
+        except Exception as e:
+            logger.error(f"AI enhancement failed: {str(e)}")
+            return self._fallback_enhancement(extracted_data)
+    
+    def _enhance_with_openai(self, extracted_data: Dict[str, Any], page_text: str, api_key: str) -> Dict[str, Any]:
+        """Use OpenAI to enhance and structure the extracted data."""
+        try:
             import openai
             client = openai.OpenAI(api_key=api_key)
             
@@ -141,7 +336,7 @@ class TourScrapingService:
             3. Duration (extract days and nights, format as separate numbers)
             4. Tour Type (FIT, Group, or Customizable)
             5. Provider/Brand Name
-            6. Contact Information
+            6. Contact Information (clean phone numbers, emails, addresses - remove extra whitespace and newlines)
             
             Return the data in this JSON format:
             {{
@@ -151,9 +346,11 @@ class TourScrapingService:
                 "duration_nights": number,
                 "tour_type": "FIT|Group|Customizable",
                 "provider_name": "Provider name",
-                "contact_info": "contact details"
+                "contact_info": "clean contact details without extra whitespace"
             }}
             
+            Important: For contact_info, clean up any extra whitespace, newlines, or formatting issues. 
+            If contact_info contains only whitespace or newlines, set it to empty string.
             If any information is not available, use null or empty values.
             """
             
@@ -169,6 +366,16 @@ class TourScrapingService:
             # Try to parse JSON response
             try:
                 ai_data = json.loads(ai_response)
+                
+                # Clean contact_info if it exists
+                if 'contact_info' in ai_data and ai_data['contact_info']:
+                    contact_info = ai_data['contact_info']
+                    # Remove extra whitespace and newlines
+                    contact_info = re.sub(r'\s+', ' ', contact_info.strip())
+                    if contact_info == '' or contact_info.isspace():
+                        contact_info = ''
+                    ai_data['contact_info'] = contact_info
+                
                 return {
                     'success': True,
                     'data': ai_data
@@ -177,7 +384,76 @@ class TourScrapingService:
                 return self._fallback_enhancement(extracted_data)
                 
         except Exception as e:
-            logger.error(f"AI enhancement failed: {str(e)}")
+            logger.error(f"OpenAI enhancement failed: {str(e)}")
+            return self._fallback_enhancement(extracted_data)
+    
+    def _enhance_with_gemini(self, extracted_data: Dict[str, Any], page_text: str, api_key: str) -> Dict[str, Any]:
+        """Use Google Gemini to enhance and structure the extracted data."""
+        try:
+            import google.generativeai as genai
+            
+            # Configure Gemini
+            genai.configure(api_key=api_key)
+            
+            prompt = f"""
+            Extract tour details from the following webpage content and structure them for a tour booking form.
+            
+            Current extracted data: {json.dumps(extracted_data, indent=2)}
+            
+            Page content (first 2000 chars): {page_text[:2000]}
+            
+            Please extract and structure the following information:
+            1. Tour Title (clean, descriptive title)
+            2. Destinations (list of destinations/cities/countries)
+            3. Duration (extract days and nights, format as separate numbers)
+            4. Tour Type (FIT, Group, or Customizable)
+            5. Provider/Brand Name
+            6. Contact Information (clean phone numbers, emails, addresses - remove extra whitespace and newlines)
+            
+            Return the data in this JSON format:
+            {{
+                "title": "Clean tour title",
+                "destinations": ["destination1", "destination2"],
+                "duration_days": number,
+                "duration_nights": number,
+                "tour_type": "FIT|Group|Customizable",
+                "provider_name": "Provider name",
+                "contact_info": "clean contact details without extra whitespace"
+            }}
+            
+            Important: For contact_info, clean up any extra whitespace, newlines, or formatting issues. 
+            If contact_info contains only whitespace or newlines, set it to empty string.
+            If any information is not available, use null or empty values.
+            """
+            
+            # Generate content using Gemini
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            response = model.generate_content(prompt)
+            
+            ai_response = response.text.strip()
+            
+            # Try to parse JSON response
+            try:
+                ai_data = json.loads(ai_response)
+                
+                # Clean contact_info if it exists
+                if 'contact_info' in ai_data and ai_data['contact_info']:
+                    contact_info = ai_data['contact_info']
+                    # Remove extra whitespace and newlines
+                    contact_info = re.sub(r'\s+', ' ', contact_info.strip())
+                    if contact_info == '' or contact_info.isspace():
+                        contact_info = ''
+                    ai_data['contact_info'] = contact_info
+                
+                return {
+                    'success': True,
+                    'data': ai_data
+                }
+            except json.JSONDecodeError:
+                return self._fallback_enhancement(extracted_data)
+                
+        except Exception as e:
+            logger.error(f"Gemini enhancement failed: {str(e)}")
             return self._fallback_enhancement(extracted_data)
     
     def _fallback_enhancement(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -210,6 +486,14 @@ class TourScrapingService:
         elif 'custom' in title.lower() or 'custom' in description.lower():
             tour_type = 'Customizable'
         
+        # Clean contact info
+        contact_info = extracted_data.get('contact_info', '')
+        if contact_info:
+            # Remove extra whitespace and newlines
+            contact_info = re.sub(r'\s+', ' ', contact_info.strip())
+            if contact_info == '' or contact_info.isspace():
+                contact_info = ''
+        
         return {
             'success': True,
             'data': {
@@ -219,6 +503,6 @@ class TourScrapingService:
                 'duration_nights': duration_nights,
                 'tour_type': tour_type,
                 'provider_name': extracted_data.get('provider_name', ''),
-                'contact_info': extracted_data.get('contact_info', '')
+                'contact_info': contact_info
             }
         } 

@@ -297,3 +297,9 @@ CACHES = {
 
 # OpenAI Configuration (optional - for enhanced scraping)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default=None)
+
+# Google Gemini Configuration (alternative AI for enhanced scraping)
+GEMINI_API_KEY = config('GEMINI_API_KEY', default=None)
+
+# Firecrawl Configuration (for enhanced web scraping)
+FIRECRAWL_API_KEY = config('FIRECRAWL_API_KEY', default=None)
