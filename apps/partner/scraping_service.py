@@ -13,15 +13,33 @@ logger = logging.getLogger(__name__)
 
 class TourExtractionSchema(BaseModel):
     """Schema for extracting tour details from web pages."""
+    tourLink: str
     title: str
     destinations: list[str]
-    duration_days: int
-    duration_nights: int
-    tour_type: str  # "FIT", "Group", or "Customizable"
-    provider_name: str
-    contact_info: str
-    price_info: str = ""
-    description: str = ""
+    durationDays: int
+    durationNights: int
+    tourType: str  # "FIT", "Group", or "Customizable"
+    providerName: str
+    contactLink: str = ""
+    tourStatus: str = "Live"
+    categories: list[str] = []
+    tags: list[str] = []
+    summary: str = ""
+    highlights: list[str] = []
+    startingPrice: float = 0.0
+    priceType: str = "Starting From"
+    departureCities: list[str] = []
+    tourStartLocation: str = ""
+    tourDropLocation: str = ""
+    departureMonths: list[str] = []
+    includesFlights: bool = False
+    includesHotels: bool = False
+    includesMeals: bool = False
+    includesTransfers: bool = False
+    visaSupport: bool = False
+    offersType: list[str] = []
+    discountDetails: str = ""
+    promotionalTagline: str = ""
 
 class TourScrapingService:
     """Service for scraping tour details from URLs."""
@@ -121,7 +139,11 @@ class TourScrapingService:
         """Extract tour data from markdown using OpenAI."""
         try:
             import openai
-            client = openai.OpenAI(api_key=api_key)
+            # Create a fresh OpenAI client without any session interference
+            client = openai.OpenAI(
+                api_key=api_key,
+                # Explicitly avoid any session configuration
+            )
             
             prompt = f"""
             Extract tour details from the following markdown content and return them as a JSON object.
@@ -133,38 +155,57 @@ class TourScrapingService:
             
             Please extract and return the following information in JSON format:
             {{
+                "tourLink": "{url}",
                 "title": "Tour title",
                 "destinations": ["destination1", "destination2"],
-                "duration_days": number,
-                "duration_nights": number,
-                "tour_type": "Fast Traffic Immigration|Group Tour|Customizable Tour",
-                "provider_name": "Provider name",
-                "contact_info": "contact details",
-                "price_info": "price information",
-                "description": "tour description"
+                "durationDays": number,
+                "durationNights": number,
+                "tourType": "FIT|Group|Customizable",
+                "providerName": "Provider name",
+                "contactLink": "Contact URL or empty string",
+                "tourStatus": "Live|Draft|Coming Soon",
+                "categories": ["category1", "category2"],
+                "tags": ["tag1", "tag2"],
+                "summary": "Brief tour description",
+                "highlights": ["highlight1", "highlight2"],
+                "startingPrice": price_in_decimal,
+                "priceType": "Starting From|Fixed",
+                "departureCities": ["city1", "city2"],
+                "tourStartLocation": "Starting location",
+                "tourDropLocation": "Ending location",
+                "departureMonths": ["January", "February"],
+                "includesFlights": true/false,
+                "includesHotels": true/false,
+                "includesMeals": true/false,
+                "includesTransfers": true/false,
+                "visaSupport": true/false,
+                "offersType": ["Early Bird Offer", "Group Discount"],
+                "discountDetails": "Discount description",
+                "promotionalTagline": "Promotional message"
             }}
             
             CRITICAL INSTRUCTIONS FOR DURATION EXTRACTION:
             - Look for patterns like "X days Y nights", "X days", "Y nights", "X day tour", "Y night tour"
-            - Extract ONLY numeric values for duration_days and duration_nights
-            - If you find "X days Y nights", set duration_days = X and duration_nights = Y
-            - If you find only "X days" without nights, set duration_days = X and duration_nights = X-1
-            - If you find only "Y nights" without days, set duration_days = Y+1 and duration_nights = Y
+            - Extract ONLY numeric values for durationDays and durationNights
+            - If you find "X days Y nights", set durationDays = X and durationNights = Y
+            - If you find only "X days" without nights, set durationDays = X and durationNights = X-1
+            - If you find only "Y nights" without days, set durationDays = Y+1 and durationNights = Y
             - If no duration found, set both to 0
             - NEVER return non-numeric values for duration fields
             
             TOUR TYPE MAPPING:
-            - "FIT" or "FIT Tour" → "Fast Traffic Immigration"
-            - "Group" or "Group Tour" → "Group Tour"
-            - "Custom" or "Customizable" → "Customizable Tour"
-            - Default: "Fast Traffic Immigration"
+            - "FIT" or "FIT Tour" → "FIT"
+            - "Group" or "Group Tour" → "Group"
+            - "Custom" or "Customizable" → "Customizable"
+            - Default: "FIT"
             
             IMPORTANT RULES:
             - For destinations, only include actual city/destination names
             - For duration, extract numeric values for days and nights
-            - For contact_info, include phone numbers and emails
-            - If any information is not available, use empty strings or 0 for numbers
+            - For contactLink, include URLs or contact information
+            - If any information is not available, use empty strings, empty arrays, or 0 for numbers
             - Ensure all duration values are integers
+            - For price, extract numeric values only (e.g., 25000.00)
             """
             
             response = client.chat.completions.create(
@@ -208,38 +249,57 @@ class TourScrapingService:
             
             Please extract and return the following information in JSON format:
             {{
+                "tourLink": "{url}",
                 "title": "Tour title",
                 "destinations": ["destination1", "destination2"],
-                "duration_days": number,
-                "duration_nights": number,
-                "tour_type": "Fast Traffic Immigration|Group Tour|Customizable Tour",
-                "provider_name": "Provider name",
-                "contact_info": "contact details",
-                "price_info": "price information",
-                "description": "tour description"
+                "durationDays": number,
+                "durationNights": number,
+                "tourType": "FIT|Group|Customizable",
+                "providerName": "Provider name",
+                "contactLink": "Contact URL or empty string",
+                "tourStatus": "Live|Draft|Coming Soon",
+                "categories": ["category1", "category2"],
+                "tags": ["tag1", "tag2"],
+                "summary": "Brief tour description",
+                "highlights": ["highlight1", "highlight2"],
+                "startingPrice": price_in_decimal,
+                "priceType": "Starting From|Fixed",
+                "departureCities": ["city1", "city2"],
+                "tourStartLocation": "Starting location",
+                "tourDropLocation": "Ending location",
+                "departureMonths": ["January", "February"],
+                "includesFlights": true/false,
+                "includesHotels": true/false,
+                "includesMeals": true/false,
+                "includesTransfers": true/false,
+                "visaSupport": true/false,
+                "offersType": ["Early Bird Offer", "Group Discount"],
+                "discountDetails": "Discount description",
+                "promotionalTagline": "Promotional message"
             }}
             
             CRITICAL INSTRUCTIONS FOR DURATION EXTRACTION:
             - Look for patterns like "X days Y nights", "X days", "Y nights", "X day tour", "Y night tour"
-            - Extract ONLY numeric values for duration_days and duration_nights
-            - If you find "X days Y nights", set duration_days = X and duration_nights = Y
-            - If you find only "X days" without nights, set duration_days = X and duration_nights = X-1
-            - If you find only "Y nights" without days, set duration_days = Y+1 and duration_nights = Y
+            - Extract ONLY numeric values for durationDays and durationNights
+            - If you find "X days Y nights", set durationDays = X and durationNights = Y
+            - If you find only "X days" without nights, set durationDays = X and durationNights = X-1
+            - If you find only "Y nights" without days, set durationDays = Y+1 and durationNights = Y
             - If no duration found, set both to 0
             - NEVER return non-numeric values for duration fields
             
             TOUR TYPE MAPPING:
-            - "FIT" or "FIT Tour" → "Fast Traffic Immigration"
-            - "Group" or "Group Tour" → "Group Tour"
-            - "Custom" or "Customizable" → "Customizable Tour"
-            - Default: "Fast Traffic Immigration"
+            - "FIT" or "FIT Tour" → "FIT"
+            - "Group" or "Group Tour" → "Group"
+            - "Custom" or "Customizable" → "Customizable"
+            - Default: "FIT"
             
             IMPORTANT RULES:
             - For destinations, only include actual city/destination names
             - For duration, extract numeric values for days and nights
-            - For contact_info, include phone numbers and emails
-            - If any information is not available, use empty strings or 0 for numbers
+            - For contactLink, include URLs or contact information
+            - If any information is not available, use empty strings, empty arrays, or 0 for numbers
             - Ensure all duration values are integers
+            - For price, extract numeric values only (e.g., 25000.00)
             """
             
             # Generate content using Gemini
@@ -280,6 +340,10 @@ class TourScrapingService:
             # Use AI to enhance and structure the data
             enhanced_data = self._enhance_with_ai(extracted_data, soup.get_text()[:3000])
             
+            # Clean and validate the data to ensure all comprehensive fields are present
+            if enhanced_data and 'data' in enhanced_data:
+                enhanced_data['data'] = self._clean_extracted_data(enhanced_data['data'])
+            
             return enhanced_data
             
         except Exception as e:
@@ -309,112 +373,150 @@ class TourScrapingService:
                             cleaned_destinations.append(clean_dest)
                 data['destinations'] = cleaned_destinations
             
-            # Clean contact info
-            if 'contact_info' in data and data['contact_info']:
-                contact_info = re.sub(r'\s+', ' ', data['contact_info'].strip())
-                data['contact_info'] = contact_info
+            # Clean contact link
+            if 'contactLink' in data and data['contactLink']:
+                contact_link = re.sub(r'\s+', ' ', data['contactLink'].strip())
+                data['contactLink'] = contact_link
             
             # Enhanced duration validation and cleaning
             data = self._validate_and_clean_duration(data)
             
-            # Set defaults for missing fields
+            # Set defaults for missing fields according to new schema
+            data.setdefault('tourLink', '')
             data.setdefault('title', '')
             data.setdefault('destinations', [])
-            data.setdefault('duration_days', 0)
-            data.setdefault('duration_nights', 0)
-            data.setdefault('tour_type', 'Fast Traffic Immigration') # Changed default
-            data.setdefault('provider_name', '')
-            data.setdefault('contact_info', '')
-            data.setdefault('price_info', '')
-            data.setdefault('description', '')
+            data.setdefault('durationDays', 0)
+            data.setdefault('durationNights', 0)
+            data.setdefault('tourType', 'FIT')
+            data.setdefault('providerName', '')
+            data.setdefault('contactLink', '')
+            data.setdefault('tourStatus', 'Live')
+            data.setdefault('categories', [])
+            data.setdefault('tags', [])
+            data.setdefault('summary', '')
+            data.setdefault('highlights', [])
+            data.setdefault('startingPrice', 0.0)
+            data.setdefault('priceType', 'Starting From')
+            data.setdefault('departureCities', [])
+            data.setdefault('tourStartLocation', '')
+            data.setdefault('tourDropLocation', '')
+            data.setdefault('departureMonths', [])
+            data.setdefault('includesFlights', False)
+            data.setdefault('includesHotels', False)
+            data.setdefault('includesMeals', False)
+            data.setdefault('includesTransfers', False)
+            data.setdefault('visaSupport', False)
+            data.setdefault('offersType', [])
+            data.setdefault('discountDetails', '')
+            data.setdefault('promotionalTagline', '')
             
             return data
             
         except Exception as e:
             logger.error(f"Error cleaning extracted data: {str(e)}")
             return {
+                'tourLink': '',
                 'title': '',
                 'destinations': [],
-                'duration_days': 0,
-                'duration_nights': 0,
-                'tour_type': 'Fast Traffic Immigration', # Changed default
-                'provider_name': '',
-                'contact_info': '',
-                'price_info': '',
-                'description': ''
+                'durationDays': 0,
+                'durationNights': 0,
+                'tourType': 'FIT',
+                'providerName': '',
+                'contactLink': '',
+                'tourStatus': 'Live',
+                'categories': [],
+                'tags': [],
+                'summary': '',
+                'highlights': [],
+                'startingPrice': 0.0,
+                'priceType': 'Starting From',
+                'departureCities': [],
+                'tourStartLocation': '',
+                'tourDropLocation': '',
+                'departureMonths': [],
+                'includesFlights': False,
+                'includesHotels': False,
+                'includesMeals': False,
+                'includesTransfers': False,
+                'visaSupport': False,
+                'offersType': [],
+                'discountDetails': '',
+                'promotionalTagline': ''
             }
     
     def _validate_and_clean_duration(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhanced duration validation and cleaning."""
         try:
-            # Handle duration_days
-            if 'duration_days' in data:
-                duration_days = data['duration_days']
+            # Handle durationDays
+            if 'durationDays' in data:
+                duration_days = data['durationDays']
                 if isinstance(duration_days, str):
                     # Extract numeric value from string
                     days_match = re.search(r'(\d+)', str(duration_days))
                     if days_match:
-                        data['duration_days'] = int(days_match.group(1))
+                        data['durationDays'] = int(days_match.group(1))
                     else:
-                        data['duration_days'] = 0
+                        data['durationDays'] = 0
                 elif isinstance(duration_days, (int, float)):
-                    data['duration_days'] = int(duration_days)
+                    data['durationDays'] = int(duration_days)
                 else:
-                    data['duration_days'] = 0
+                    data['durationDays'] = 0
             else:
-                data['duration_days'] = 0
+                data['durationDays'] = 0
             
-            # Handle duration_nights
-            if 'duration_nights' in data:
-                duration_nights = data['duration_nights']
+            # Handle durationNights
+            if 'durationNights' in data:
+                duration_nights = data['durationNights']
                 if isinstance(duration_nights, str):
                     # Extract numeric value from string
                     nights_match = re.search(r'(\d+)', str(duration_nights))
                     if nights_match:
-                        data['duration_nights'] = int(nights_match.group(1))
+                        data['durationNights'] = int(nights_match.group(1))
                     else:
-                        data['duration_nights'] = 0
+                        data['durationNights'] = 0
                 elif isinstance(duration_nights, (int, float)):
-                    data['duration_nights'] = int(duration_nights)
+                    data['durationNights'] = int(duration_nights)
                 else:
-                    data['duration_nights'] = 0
+                    data['durationNights'] = 0
             else:
-                data['duration_nights'] = 0
+                data['durationNights'] = 0
             
             # Additional validation logic
-            if data['duration_days'] < 0:
-                data['duration_days'] = 0
-            if data['duration_nights'] < 0:
-                data['duration_nights'] = 0
+            if data['durationDays'] < 0:
+                data['durationDays'] = 0
+            if data['durationNights'] < 0:
+                data['durationNights'] = 0
             
             # If we have days but no nights, calculate nights
-            if data['duration_days'] > 0 and data['duration_nights'] == 0:
-                data['duration_nights'] = max(0, data['duration_days'] - 1)
+            if data['durationDays'] > 0 and data['durationNights'] == 0:
+                data['durationNights'] = max(0, data['durationDays'] - 1)
             
             # If we have nights but no days, calculate days
-            if data['duration_nights'] > 0 and data['duration_days'] == 0:
-                data['duration_days'] = data['duration_nights'] + 1
+            if data['durationNights'] > 0 and data['durationDays'] == 0:
+                data['durationDays'] = data['durationNights'] + 1
             
             return data
             
         except Exception as e:
             logger.error(f"Error validating duration: {str(e)}")
-            data['duration_days'] = 0
-            data['duration_nights'] = 0
+            data['durationDays'] = 0
+            data['durationNights'] = 0
             return data
     
     def _extract_basic_info(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract basic information from the HTML."""
         data = {
-            'url': url,
+            'tourLink': url,
             'title': '',
             'destinations': [],
-            'duration': '',
-            'tour_type': '',
-            'provider_name': '',
-            'contact_info': '',
-            'price_info': '',
-            'description': ''
+            'durationDays': 0,
+            'durationNights': 0,
+            'tourType': 'FIT',
+            'providerName': '',
+            'contactLink': '',
+            'startingPrice': 0.0,
+            'priceType': 'Starting From',
+            'summary': ''
         }
         
         # Extract title
@@ -443,15 +545,15 @@ class TourScrapingService:
             element = soup.select_one(selector)
             if element:
                 if element.name == 'meta':
-                    data['description'] = element.get('content', '')
+                    data['summary'] = element.get('content', '')
                 else:
-                    data['description'] = element.get_text(strip=True)
-                if data['description']:
+                    data['summary'] = element.get_text(strip=True)
+                if data['summary']:
                     break
         
         # Extract provider name from domain or page content
         domain = urlparse(url).netloc
-        data['provider_name'] = domain.replace('www.', '').split('.')[0].title()
+        data['providerName'] = domain.replace('www.', '').split('.')[0].title()
         
         # Enhanced duration extraction from page content
         text_content = soup.get_text()
@@ -472,21 +574,21 @@ class TourScrapingService:
                 if len(match.groups()) == 2:
                     # We have both days and nights
                     if 'day' in pattern.lower() and 'night' in pattern.lower():
-                        data['duration_days'] = int(match.group(1))
-                        data['duration_nights'] = int(match.group(2))
+                        data['durationDays'] = int(match.group(1))
+                        data['durationNights'] = int(match.group(2))
                     else:
                         # Handle N/D or D/N format
-                        data['duration_nights'] = int(match.group(1))
-                        data['duration_days'] = int(match.group(2))
+                        data['durationNights'] = int(match.group(1))
+                        data['durationDays'] = int(match.group(2))
                 else:
                     # We have only one value
                     value = int(match.group(1))
                     if 'day' in pattern.lower():
-                        data['duration_days'] = value
-                        data['duration_nights'] = max(0, value - 1)
+                        data['durationDays'] = value
+                        data['durationNights'] = max(0, value - 1)
                     else:
-                        data['duration_nights'] = value
-                        data['duration_days'] = value + 1
+                        data['durationNights'] = value
+                        data['durationDays'] = value + 1
                 break
         
         # Look for contact information
@@ -547,9 +649,9 @@ class TourScrapingService:
         
         # Combine all contact information
         if contact_info_parts:
-            data['contact_info'] = ' | '.join(contact_info_parts[:3])  # Limit to 3 items
+            data['contactLink'] = ' | '.join(contact_info_parts[:3])  # Limit to 3 items
         else:
-            data['contact_info'] = ''
+            data['contactLink'] = ''
         
         return data
     
@@ -575,7 +677,11 @@ class TourScrapingService:
         """Use OpenAI to enhance and structure the extracted data."""
         try:
             import openai
-            client = openai.OpenAI(api_key=api_key)
+            # Create a fresh OpenAI client without any session interference
+            client = openai.OpenAI(
+                api_key=api_key,
+                # Explicitly avoid any session configuration
+            )
             
             prompt = f"""
             Extract tour details from the following webpage content and structure them for a tour booking form.
@@ -588,38 +694,38 @@ class TourScrapingService:
             1. Tour Title (clean, descriptive title)
             2. Destinations (list of destinations/cities/countries)
             3. Duration (extract days and nights, format as separate numbers)
-            4. Tour Type (Fast Traffic Immigration, Group Tour, or Customizable Tour)
+            4. Tour Type (FIT, Group, or Customizable)
             5. Provider/Brand Name
             6. Contact Information (clean phone numbers, emails, addresses - remove extra whitespace and newlines)
             
             CRITICAL DURATION EXTRACTION RULES:
             - Look for patterns like "X days Y nights", "X days", "Y nights", "X day tour", "Y night tour"
-            - Extract ONLY numeric values for duration_days and duration_nights
-            - If you find "X days Y nights", set duration_days = X and duration_nights = Y
-            - If you find only "X days" without nights, set duration_days = X and duration_nights = X-1
-            - If you find only "Y nights" without days, set duration_days = Y+1 and duration_nights = Y
+            - Extract ONLY numeric values for durationDays and durationNights
+            - If you find "X days Y nights", set durationDays = X and durationNights = Y
+            - If you find only "X days" without nights, set durationDays = X and durationNights = X-1
+            - If you find only "Y nights" without days, set durationDays = Y+1 and durationNights = Y
             - If no duration found, set both to 0
             - NEVER return non-numeric values for duration fields
             
             TOUR TYPE MAPPING:
-            - "FIT" or "FIT Tour" → "Fast Traffic Immigration"
-            - "Group" or "Group Tour" → "Group Tour"
-            - "Custom" or "Customizable" → "Customizable Tour"
-            - Default: "Fast Traffic Immigration"
+            - "FIT" or "FIT Tour" → "FIT"
+            - "Group" or "Group Tour" → "Group"
+            - "Custom" or "Customizable" → "Customizable"
+            - Default: "FIT"
             
             Return the data in this JSON format:
             {{
                 "title": "Clean tour title",
                 "destinations": ["destination1", "destination2"],
-                "duration_days": number,
-                "duration_nights": number,
-                "tour_type": "Fast Traffic Immigration|Group Tour|Customizable Tour",
-                "provider_name": "Provider name",
-                "contact_info": "clean contact details without extra whitespace"
+                "durationDays": number,
+                "durationNights": number,
+                "tourType": "FIT|Group|Customizable",
+                "providerName": "Provider name",
+                "contactLink": "clean contact details without extra whitespace"
             }}
             
-            Important: For contact_info, clean up any extra whitespace, newlines, or formatting issues. 
-            If contact_info contains only whitespace or newlines, set it to empty string.
+            Important: For contactLink, clean up any extra whitespace, newlines, or formatting issues. 
+            If contactLink contains only whitespace or newlines, set it to empty string.
             If any information is not available, use null or empty values.
             """
             
@@ -636,14 +742,14 @@ class TourScrapingService:
             try:
                 ai_data = json.loads(ai_response)
                 
-                # Clean contact_info if it exists
-                if 'contact_info' in ai_data and ai_data['contact_info']:
-                    contact_info = ai_data['contact_info']
+                # Clean contactLink if it exists
+                if 'contactLink' in ai_data and ai_data['contactLink']:
+                    contact_link = ai_data['contactLink']
                     # Remove extra whitespace and newlines
-                    contact_info = re.sub(r'\s+', ' ', contact_info.strip())
-                    if contact_info == '' or contact_info.isspace():
-                        contact_info = ''
-                    ai_data['contact_info'] = contact_info
+                    contact_link = re.sub(r'\s+', ' ', contact_link.strip())
+                    if contact_link == '' or contact_link.isspace():
+                        contact_link = ''
+                    ai_data['contactLink'] = contact_link
                 
                 # Validate and clean duration data
                 ai_data = self._validate_and_clean_duration(ai_data)
@@ -684,32 +790,32 @@ class TourScrapingService:
             
             CRITICAL DURATION EXTRACTION RULES:
             - Look for patterns like "X days Y nights", "X days", "Y nights", "X day tour", "Y night tour"
-            - Extract ONLY numeric values for duration_days and duration_nights
-            - If you find "X days Y nights", set duration_days = X and duration_nights = Y
-            - If you find only "X days" without nights, set duration_days = X and duration_nights = X-1
-            - If you find only "Y nights" without days, set duration_days = Y+1 and duration_nights = Y
+            - Extract ONLY numeric values for durationDays and durationNights
+            - If you find "X days Y nights", set durationDays = X and durationNights = Y
+            - If you find only "X days" without nights, set durationDays = X and durationNights = X-1
+            - If you find only "Y nights" without days, set durationDays = Y+1 and durationNights = Y
             - If no duration found, set both to 0
             - NEVER return non-numeric values for duration fields
             
             TOUR TYPE MAPPING:
-            - "FIT" or "FIT Tour" → "Fast Traffic Immigration"
-            - "Group" or "Group Tour" → "Group Tour"
-            - "Custom" or "Customizable" → "Customizable Tour"
-            - Default: "Fast Traffic Immigration"
+            - "FIT" or "FIT Tour" → "FIT"
+            - "Group" or "Group Tour" → "Group"
+            - "Custom" or "Customizable" → "Customizable"
+            - Default: "FIT"
             
             Return the data in this JSON format:
             {{
                 "title": "Clean tour title",
                 "destinations": ["destination1", "destination2"],
-                "duration_days": number,
-                "duration_nights": number,
-                "tour_type": "Fast Traffic Immigration|Group Tour|Customizable Tour",
-                "provider_name": "Provider name",
-                "contact_info": "clean contact details without extra whitespace"
+                "durationDays": number,
+                "durationNights": number,
+                "tourType": "FIT|Group|Customizable",
+                "providerName": "Provider name",
+                "contactLink": "clean contact details without extra whitespace"
             }}
             
-            Important: For contact_info, clean up any extra whitespace, newlines, or formatting issues. 
-            If contact_info contains only whitespace or newlines, set it to empty string.
+            Important: For contactLink, clean up any extra whitespace, newlines, or formatting issues. 
+            If contactLink contains only whitespace or newlines, set it to empty string.
             If any information is not available, use null or empty values.
             """
             
@@ -723,14 +829,14 @@ class TourScrapingService:
             try:
                 ai_data = json.loads(ai_response)
                 
-                # Clean contact_info if it exists
-                if 'contact_info' in ai_data and ai_data['contact_info']:
-                    contact_info = ai_data['contact_info']
+                # Clean contactLink if it exists
+                if 'contactLink' in ai_data and ai_data['contactLink']:
+                    contact_link = ai_data['contactLink']
                     # Remove extra whitespace and newlines
-                    contact_info = re.sub(r'\s+', ' ', contact_info.strip())
-                    if contact_info == '' or contact_info.isspace():
-                        contact_info = ''
-                    ai_data['contact_info'] = contact_info
+                    contact_link = re.sub(r'\s+', ' ', contact_link.strip())
+                    if contact_link == '' or contact_link.isspace():
+                        contact_link = ''
+                    ai_data['contactLink'] = contact_link
                 
                 # Validate and clean duration data
                 ai_data = self._validate_and_clean_duration(ai_data)
@@ -750,23 +856,23 @@ class TourScrapingService:
         """Fallback enhancement without AI."""
         # Basic parsing and enhancement
         title = extracted_data.get('title', '')
-        description = extracted_data.get('description', '')
+        summary = extracted_data.get('summary', '')
         
-        # Extract destinations from title or description
+        # Extract destinations from title or summary
         destinations = []
         if title:
             # Simple destination extraction
             common_destinations = ['Bali', 'Thailand', 'Singapore', 'Maldives', 'Dubai', 'Europe', 'India', 'Japan', 'Korea', 'Australia', 'New Zealand', 'USA', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'South Africa', 'Egypt', 'Morocco', 'Turkey', 'Greece', 'Italy', 'Spain', 'France', 'Germany', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Czech Republic', 'Poland', 'Hungary', 'Romania', 'Bulgaria', 'Croatia', 'Slovenia', 'Slovakia', 'Lithuania', 'Latvia', 'Estonia', 'Finland', 'Sweden', 'Norway', 'Denmark', 'Iceland', 'Ireland', 'UK', 'Portugal', 'Malta', 'Cyprus', 'Iceland']
             for dest in common_destinations:
-                if dest.lower() in title.lower() or dest.lower() in description.lower():
+                if dest.lower() in title.lower() or dest.lower() in summary.lower():
                     destinations.append(dest)
         
         # Enhanced duration extraction
-        duration_days = 0
-        duration_nights = 0
+        durationDays = 0
+        durationNights = 0
         
-        # Look for duration patterns in title and description
-        duration_text = title + ' ' + description
+        # Look for duration patterns in title and summary
+        duration_text = title + ' ' + summary
         duration_patterns = [
             r'(\d+)\s*days?\s*(\d+)\s*nights?',
             r'(\d+)\s*nights?\s*(\d+)\s*days?',
@@ -784,47 +890,53 @@ class TourScrapingService:
                 if len(match.groups()) == 2:
                     # We have both days and nights
                     if 'day' in pattern.lower() and 'night' in pattern.lower():
-                        duration_days = int(match.group(1))
-                        duration_nights = int(match.group(2))
+                        durationDays = int(match.group(1))
+                        durationNights = int(match.group(2))
                     else:
                         # Handle N/D or D/N format
-                        duration_nights = int(match.group(1))
-                        duration_days = int(match.group(2))
+                        durationNights = int(match.group(1))
+                        durationDays = int(match.group(2))
                 else:
                     # We have only one value
                     value = int(match.group(1))
                     if 'day' in pattern.lower():
-                        duration_days = value
-                        duration_nights = max(0, value - 1)
+                        durationDays = value
+                        durationNights = max(0, value - 1)
                     else:
-                        duration_nights = value
-                        duration_days = value + 1
+                        durationNights = value
+                        durationDays = value + 1
                 break
         
         # Determine tour type
-        tour_type = 'Fast Traffic Immigration' # Changed default
-        if 'group' in title.lower() or 'group' in description.lower():
-            tour_type = 'Group Tour'
-        elif 'custom' in title.lower() or 'custom' in description.lower():
-            tour_type = 'Customizable Tour'
+        tourType = 'FIT' # Changed default
+        if 'group' in title.lower() or 'group' in summary.lower():
+            tourType = 'Group'
+        elif 'custom' in title.lower() or 'custom' in summary.lower():
+            tourType = 'Customizable'
         
         # Clean contact info
-        contact_info = extracted_data.get('contact_info', '')
-        if contact_info:
+        contactLink = extracted_data.get('contactLink', '')
+        if contactLink:
             # Remove extra whitespace and newlines
-            contact_info = re.sub(r'\s+', ' ', contact_info.strip())
-            if contact_info == '' or contact_info.isspace():
-                contact_info = ''
+            contactLink = re.sub(r'\s+', ' ', contactLink.strip())
+            if contactLink == '' or contactLink.isspace():
+                contactLink = ''
+        
+        # Create the basic data structure
+        basic_data = {
+            'title': title or 'Tour Package',
+            'destinations': destinations,
+            'durationDays': durationDays,
+            'durationNights': durationNights,
+            'tourType': tourType,
+            'providerName': extracted_data.get('providerName', ''),
+            'contactLink': contactLink
+        }
+        
+        # Clean and add all comprehensive fields
+        cleaned_data = self._clean_extracted_data(basic_data)
         
         return {
             'success': True,
-            'data': {
-                'title': title or 'Tour Package',
-                'destinations': destinations,
-                'duration_days': duration_days,
-                'duration_nights': duration_nights,
-                'tour_type': tour_type,
-                'provider_name': extracted_data.get('provider_name', ''),
-                'contact_info': contact_info
-            }
+            'data': cleaned_data
         } 

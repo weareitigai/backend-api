@@ -186,9 +186,100 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 # Spectacular Configuration (API Documentation)
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Travel Partner API',
-    'DESCRIPTION': 'API for travel partner platform with authentication and partner management',
+    'DESCRIPTION': '''
+    # Travel Partner API Documentation
+    
+    This API provides comprehensive functionality for travel partner management, including:
+    
+    ## Features
+    
+    ### Authentication & User Management
+    - Email and mobile OTP verification
+    - User registration and login
+    - Password management and recovery
+    - Profile management
+    
+    ### Partner Onboarding
+    - Multi-step partner registration process
+    - Business details management
+    - Location coverage configuration
+    - Tours and services information
+    - Legal and banking details
+    
+    ### Tour Management
+    - **AI-powered tour scraping** from travel websites
+    - Comprehensive tour data structure with pricing, destinations, and inclusions
+    - Tour creation, updating, and management
+    - Advanced filtering and search capabilities
+    
+    ## Key Endpoints
+    
+    ### Tour Scraping
+    - `POST /api/partner/scrape-tour-details/` - Extract tour data from URLs using AI
+    
+    ### Tour Management
+    - `POST /api/partner/user/{user_id}/tours/create/` - Create new tours
+    - `GET /api/partner/user/{user_id}/tours/` - List all tours with filtering
+    - `GET /api/partner/user/{user_id}/tours/{tour_id}/` - Get tour details
+    - `PATCH /api/partner/user/{user_id}/tours/{tour_id}/update/` - Update tours
+    
+    ## Authentication
+    
+    Most endpoints require authentication using Token Authentication:
+    ```
+    Authorization: Token <your_token>
+    ```
+    
+    ## Tour Data Schema
+    
+    The API supports comprehensive tour data including:
+    - Basic tour information (title, destinations, duration)
+    - Pricing and availability details
+    - Inclusions and exclusions
+    - Promotional offers and discounts
+    - SEO and marketing information
+    
+    ## AI-Powered Features
+    
+    - **Smart Tour Scraping**: Automatically extracts tour details from travel websites
+    - **Data Enhancement**: AI models enhance and structure scraped data
+    - **Intelligent Categorization**: Automatic categorization and tagging of tours
+    ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'SECURITY': [
+        {
+            'Token': []
+        }
+    ],
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Token-based authentication. Use format: Token <your_token>'
+        }
+    },
+    'TAGS': [
+        {
+            'name': 'Authentication',
+            'description': 'User authentication and authorization endpoints'
+        },
+        {
+            'name': 'Partner Onboarding',
+            'description': 'Multi-step partner registration and onboarding process'
+        },
+        {
+            'name': 'Tour Management',
+            'description': 'AI-powered tour scraping and comprehensive tour management'
+        },
+        {
+            'name': 'Common Data',
+            'description': 'Reference data for destinations, languages, and tour types'
+        }
+    ]
 }
 
 JAZZMIN_SETTINGS = {

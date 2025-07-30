@@ -4,11 +4,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
 from .models import Destination, Language, TourType, Timezone
 from .serializers import (
     DestinationSerializer, LanguageSerializer,
     TourTypeSerializer, TimezoneSerializer, DestinationResponseSerializer
 )
+
+# Create response serializers for drf-spectacular
+class GenericListResponseSerializer(serializers.Serializer):
+    results = serializers.ListField(child=serializers.CharField())
 
 
 @extend_schema(
@@ -18,7 +23,7 @@ from .serializers import (
             'in': 'query',
             'description': 'Search term for destination names',
             'required': False,
-            'type': 'string'
+            'schema': {'type': 'string', 'format': 'string'}
         }
     ],
     responses={200: DestinationResponseSerializer}
@@ -49,7 +54,7 @@ def destinations_view(request):
 
 
 @extend_schema(
-    responses={200: {'type': 'object', 'properties': {'results': {'type': 'array', 'items': {'type': 'string'}}}}}
+    responses={200: GenericListResponseSerializer}
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -63,7 +68,7 @@ def languages_view(request):
 
 
 @extend_schema(
-    responses={200: {'type': 'object', 'properties': {'results': {'type': 'array', 'items': {'type': 'string'}}}}}
+    responses={200: GenericListResponseSerializer}
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -77,7 +82,7 @@ def tour_types_view(request):
 
 
 @extend_schema(
-    responses={200: {'type': 'object', 'properties': {'results': {'type': 'array', 'items': {'type': 'string'}}}}}
+    responses={200: GenericListResponseSerializer}
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])

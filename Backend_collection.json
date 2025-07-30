@@ -7,7 +7,9 @@
   },
   "variable": [
     { "key": "base_url", "value": "https://backend-api-vpx2.onrender.com/api" },
-    { "key": "token", "value": "" }
+    { "key": "token", "value": "" },
+    { "key": "user_id", "value": "1", "description": "User ID for tour operations" },
+    { "key": "tour_id", "value": "1", "description": "Tour ID for specific tour operations" }
   ],
   "item": [
     {
@@ -89,7 +91,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              { "key": "Authorization", "value": "Token {{token}}" }
             ],
             "url": { "raw": "{{base_url}}/auth/logout/", "host": [ "{{base_url}}" ], "path": [ "auth", "logout/" ] },
             "description": "Logout the current user (token invalidation)."
@@ -99,7 +101,7 @@
           "name": "Get Profile",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": { "raw": "{{base_url}}/auth/profile/", "host": [ "{{base_url}}" ], "path": [ "auth", "profile/" ] },
             "description": "Get the authenticated user's profile."
           }
@@ -130,7 +132,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              { "key": "Authorization", "value": "Token {{token}}" }
             ],
             "body": { "mode": "raw", "raw": "{\n  \"oldPassword\": \"current_password\",\n  \"newPassword\": \"new_password123\"\n}" },
             "url": { "raw": "{{base_url}}/auth/change-password/", "host": [ "{{base_url}}" ], "path": [ "auth", "change-password/" ] },
@@ -146,7 +148,7 @@
           "name": "Business Details (GET/POST/PATCH)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": {
               "raw": "{{base_url}}/partner/business-details/",
               "host": [ "{{base_url}}" ],
@@ -160,7 +162,7 @@
           "name": "Business Details (POST)",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* business details fields */\n}" },
             "url": { "raw": "{{base_url}}/partner/business-details/", "host": [ "{{base_url}}" ], "path": [ "partner", "business-details/" ] },
             "description": "Create or update business details (upsert)."
@@ -170,7 +172,7 @@
           "name": "Business Details (PATCH)",
           "request": {
             "method": "PATCH",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* business details fields to update */\n}" },
             "url": { "raw": "{{base_url}}/partner/business-details/", "host": [ "{{base_url}}" ], "path": [ "partner", "business-details/" ] },
             "description": "Update business details (partial update)."
@@ -180,7 +182,7 @@
           "name": "Location Coverage (GET/POST/PATCH)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": {
               "raw": "{{base_url}}/partner/location-coverage/",
               "host": [ "{{base_url}}" ],
@@ -194,7 +196,7 @@
           "name": "Location Coverage (POST)",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* location coverage fields */\n}" },
             "url": { "raw": "{{base_url}}/partner/location-coverage/", "host": [ "{{base_url}}" ], "path": [ "partner", "location-coverage/" ] },
             "description": "Create or update location coverage (upsert)."
@@ -204,7 +206,7 @@
           "name": "Location Coverage (PATCH)",
           "request": {
             "method": "PATCH",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* location coverage fields to update */\n}" },
             "url": { "raw": "{{base_url}}/partner/location-coverage/", "host": [ "{{base_url}}" ], "path": [ "partner", "location-coverage/" ] },
             "description": "Update location coverage (partial update)."
@@ -214,7 +216,7 @@
           "name": "Tours & Services (GET/POST/PATCH)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": {
               "raw": "{{base_url}}/partner/tours-services/",
               "host": [ "{{base_url}}" ],
@@ -228,7 +230,7 @@
           "name": "Tours & Services (POST)",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* tours & services fields */\n}" },
             "url": { "raw": "{{base_url}}/partner/tours-services/", "host": [ "{{base_url}}" ], "path": [ "partner", "tours-services/" ] },
             "description": "Create or update tours & services info (upsert)."
@@ -238,7 +240,7 @@
           "name": "Tours & Services (PATCH)",
           "request": {
             "method": "PATCH",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* tours & services fields to update */\n}" },
             "url": { "raw": "{{base_url}}/partner/tours-services/", "host": [ "{{base_url}}" ], "path": [ "partner", "tours-services/" ] },
             "description": "Update tours & services info (partial update)."
@@ -248,7 +250,7 @@
           "name": "Legal & Banking (GET/POST/PATCH)",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": {
               "raw": "{{base_url}}/partner/legal-banking/",
               "host": [ "{{base_url}}" ],
@@ -262,7 +264,7 @@
           "name": "Legal & Banking (POST)",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* legal & banking fields */\n}" },
             "url": { "raw": "{{base_url}}/partner/legal-banking/", "host": [ "{{base_url}}" ], "path": [ "partner", "legal-banking/" ] },
             "description": "Create or update legal & banking info (upsert)."
@@ -272,7 +274,7 @@
           "name": "Legal & Banking (PATCH)",
           "request": {
             "method": "PATCH",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  /* legal & banking fields to update */\n}" },
             "url": { "raw": "{{base_url}}/partner/legal-banking/", "host": [ "{{base_url}}" ], "path": [ "partner", "legal-banking/" ] },
             "description": "Update legal & banking info (partial update)."
@@ -282,7 +284,7 @@
           "name": "Get Onboarding Status",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": {
               "raw": "{{base_url}}/partner/status/",
               "host": [ "{{base_url}}" ],
@@ -296,7 +298,7 @@
           "name": "Complete Onboarding",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
             "url": { "raw": "{{base_url}}/partner/complete-onboarding/", "host": [ "{{base_url}}" ], "path": [ "partner", "complete-onboarding/" ] },
             "description": "Mark onboarding as complete."
           }
@@ -310,38 +312,90 @@
           "name": "Get All Tours",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
-            "url": { "raw": "{{base_url}}/partner/user/1/tours/", "host": [ "{{base_url}}" ], "path": [ "partner", "user", "1", "tours" ] },
-            "description": "Get all tours for a verified partner (replace 1 with actual user_id)."
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
+            "url": { 
+              "raw": "{{base_url}}/partner/user/{{user_id}}/tours/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "user", "{{user_id}}", "tours" ],
+              "query": [
+                { "key": "status", "value": "", "description": "(Optional) Filter by tour status: Draft, Live, Archived" },
+                { "key": "tour_type", "value": "", "description": "(Optional) Filter by tour type: FIT, Group, Customizable" }
+              ]
+            },
+            "description": "Get all tours for a verified partner. Supports filtering by status and tour type."
           }
         },
         {
           "name": "Create Tour",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  /* tour details fields */\n}" },
-            "url": { "raw": "{{base_url}}/partner/user/1/tours/create/", "host": [ "{{base_url}}" ], "path": [ "partner", "user", "1", "tours", "create" ] },
-            "description": "Create a new tour for a verified partner (replace 1 with actual user_id)."
+            "header": [ 
+              { "key": "Authorization", "value": "Token {{token}}" }, 
+              { "key": "Content-Type", "value": "application/json" } 
+            ],
+            "body": { 
+              "mode": "raw", 
+              "raw": "{\n  \"tourLink\": \"https://makemytrip.com/bali-package\",\n  \"title\": \"Bali Honeymoon Escape – 6N/5D\",\n  \"destinations\": [\"Bali\", \"Indonesia\"],\n  \"durationDays\": 6,\n  \"durationNights\": 5,\n  \"tourType\": \"FIT\",\n  \"providerName\": \"MakeMyTrip\",\n  \"contactLink\": \"https://wa.me/1234567890\",\n  \"categories\": [\"Honeymoon\", \"Beach\", \"Adventure\"],\n  \"tags\": [\"romantic\", \"beach\", \"honeymoon\"],\n  \"summary\": \"Experience the perfect romantic getaway in Bali\",\n  \"highlights\": [\"Private Villa\", \"Romantic Dinner\", \"Beach Access\"],\n  \"startingPrice\": 48999.00,\n  \"priceType\": \"Starting From\",\n  \"departureCities\": [\"Delhi\", \"Mumbai\"],\n  \"tourStartLocation\": \"Delhi Airport\",\n  \"tourDropLocation\": \"Bali Hotel\",\n  \"departureMonths\": [\"January\", \"February\", \"March\"],\n  \"tourStatus\": \"Draft\",\n  \"includesFlights\": true,\n  \"includesHotels\": true,\n  \"includesMeals\": true,\n  \"includesTransfers\": true,\n  \"visaSupport\": false,\n  \"offersType\": [\"Early Bird Offer\", \"Group Discount\"],\n  \"discountDetails\": \"Flat 20% off, Buy 2 Get 1 Free\",\n  \"promotionalTagline\": \"Limited-time July Sale\"\n}" 
+            },
+            "url": { 
+              "raw": "{{base_url}}/partner/user/{{user_id}}/tours/create/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "user", "{{user_id}}", "tours", "create" ] 
+            },
+            "description": "Create a new tour for a verified partner. Requires complete tour information including basic details, pricing, and inclusions."
           }
         },
         {
           "name": "Update Tour",
           "request": {
             "method": "PATCH",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 1,\n  /* tour details fields to update */\n}" },
-            "url": { "raw": "{{base_url}}/partner/user/1/tours/create/", "host": [ "{{base_url}}" ], "path": [ "partner", "user", "1", "tours", "create" ] },
-            "description": "Update an existing tour for a verified partner (replace 1 with actual user_id)."
+            "header": [ 
+              { "key": "Authorization", "value": "Token {{token}}" }, 
+              { "key": "Content-Type", "value": "application/json" } 
+            ],
+            "body": { 
+              "mode": "raw", 
+              "raw": "{\n  \"title\": \"Updated Bali Honeymoon Package\",\n  \"startingPrice\": 52999.00,\n  \"tourStatus\": \"Live\",\n  \"promotionalTagline\": \"New Year Special Offer\",\n  \"summary\": \"Updated romantic getaway experience in Bali\",\n  \"highlights\": [\"Private Villa\", \"Romantic Dinner\", \"Beach Access\", \"Spa Treatment\"]\n}" 
+            },
+            "url": { 
+              "raw": "{{base_url}}/partner/user/{{user_id}}/tours/{{tour_id}}/update/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "user", "{{user_id}}", "tours", "{{tour_id}}", "update" ] 
+            },
+            "description": "Update an existing tour. Supports partial updates - only include fields you want to change."
           }
         },
         {
           "name": "Get Tour Details",
           "request": {
             "method": "GET",
-            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
-            "url": { "raw": "{{base_url}}/partner/user/1/tours/1/", "host": [ "{{base_url}}" ], "path": [ "partner", "user", "1", "tours", "1" ] },
-            "description": "Get details of a specific tour for a verified partner (replace 1 with actual user_id and tour_id)."
+            "header": [ { "key": "Authorization", "value": "Token {{token}}" } ],
+            "url": { 
+              "raw": "{{base_url}}/partner/user/{{user_id}}/tours/{{tour_id}}/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "user", "{{user_id}}", "tours", "{{tour_id}}" ] 
+            },
+            "description": "Get detailed information of a specific tour including all fields and calculated visibility score."
+          }
+        },
+        {
+          "name": "Create Tour from Scraped Data",
+          "request": {
+            "method": "POST",
+            "header": [ 
+              { "key": "Authorization", "value": "Token {{token}}" }, 
+              { "key": "Content-Type", "value": "application/json" } 
+            ],
+            "body": { 
+              "mode": "raw", 
+              "raw": "{\n  \"tourLink\": \"https://makemytrip.com/bali-package\",\n  \"title\": \"Bali Honeymoon Escape – 6N/5D\",\n  \"destinations\": [\"Bali\", \"Indonesia\"],\n  \"durationDays\": 6,\n  \"durationNights\": 5,\n  \"tourType\": \"FIT\",\n  \"providerName\": \"MakeMyTrip\",\n  \"contactLink\": \"https://wa.me/1234567890\",\n  \"categories\": [\"Honeymoon\", \"Beach\", \"Adventure\"],\n  \"tags\": [\"romantic\", \"beach\", \"honeymoon\"],\n  \"summary\": \"Experience the perfect romantic getaway in Bali\",\n  \"highlights\": [\"Private Villa\", \"Romantic Dinner\", \"Beach Access\"],\n  \"startingPrice\": 48999.00,\n  \"priceType\": \"Starting From\",\n  \"departureCities\": [\"Delhi\", \"Mumbai\"],\n  \"tourStartLocation\": \"Delhi Airport\",\n  \"tourDropLocation\": \"Bali Hotel\",\n  \"departureMonths\": [\"January\", \"February\", \"March\"],\n  \"tourStatus\": \"Draft\",\n  \"includesFlights\": true,\n  \"includesHotels\": true,\n  \"includesMeals\": true,\n  \"includesTransfers\": true,\n  \"visaSupport\": false,\n  \"offersType\": [\"Early Bird Offer\", \"Group Discount\"],\n  \"discountDetails\": \"Flat 20% off, Buy 2 Get 1 Free\",\n  \"promotionalTagline\": \"Limited-time July Sale\"\n}" 
+            },
+            "url": { 
+              "raw": "{{base_url}}/partner/user/{{user_id}}/tours/create-from-scraped/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "user", "{{user_id}}", "tours", "create-from-scraped" ] 
+            },
+            "description": "Create a tour using data from web scraping. This endpoint is specifically for creating tours from scraped tour information."
           }
         }
       ]
@@ -354,9 +408,16 @@
           "request": {
             "method": "POST",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://example.com/tour-page\"\n}" },
-            "url": { "raw": "{{base_url}}/partner/scrape-tour-details/", "host": [ "{{base_url}}" ], "path": [ "partner", "scrape-tour-details" ] },
-            "description": "Scrape tour details from a URL. No authentication required."
+            "body": { 
+              "mode": "raw", 
+              "raw": "{\n  \"url\": \"https://makemytrip.com/bali-package\"\n}" 
+            },
+            "url": { 
+              "raw": "{{base_url}}/partner/scrape-tour-details/", 
+              "host": [ "{{base_url}}" ], 
+              "path": [ "partner", "scrape-tour-details" ] 
+            },
+            "description": "Scrape tour details from a URL. No authentication required. Returns structured tour data that can be used to create tours."
           }
         }
       ]

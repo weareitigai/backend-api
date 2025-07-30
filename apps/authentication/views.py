@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
 from .models import User, OTPVerification
 from .serializers import (
     SendEmailOTPSerializer, VerifyEmailOTPSerializer,
@@ -21,13 +22,32 @@ from .rate_limiting import rate_limit_otp_request
 import logging
 from django.conf import settings
 
+# Create response serializers for drf-spectacular
+class SuccessResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    message = serializers.CharField()
+
+class ErrorResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=False)
+    message = serializers.CharField()
+
+class LogoutResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+
+class BypassMobileRequestSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+
 
 logger = logging.getLogger(__name__)
 
 
 @extend_schema(
     request=SendEmailOTPSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer,
+        500: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -80,7 +100,10 @@ def send_email_otp_view(request):
 
 @extend_schema(
     request=VerifyEmailOTPSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -115,7 +138,11 @@ def verify_email_otp_view(request):
 
 @extend_schema(
     request=SendMobileOTPSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer,
+        500: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -167,7 +194,10 @@ def send_mobile_otp_view(request):
 
 @extend_schema(
     request=VerifyMobileOTPSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -303,7 +333,10 @@ def login_view(request):
 
 
 @extend_schema(
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}}}}
+    responses={
+        200: LogoutResponseSerializer,
+        401: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -337,7 +370,10 @@ def profile_view(request):
 
 @extend_schema(
     request=ForgotPasswordSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -370,7 +406,10 @@ def forgot_password_view(request):
 
 @extend_schema(
     request=ResetPasswordSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -403,7 +442,10 @@ def reset_password_view(request):
 
 @extend_schema(
     request=ChangePasswordSerializer,
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -431,8 +473,11 @@ def change_password_view(request):
 
 
 @extend_schema(
-    request={'type': 'object', 'properties': {'mobile': {'type': 'string'}}},
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    request=BypassMobileRequestSerializer,
+    responses={
+        200: SuccessResponseSerializer,
+        400: ErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])

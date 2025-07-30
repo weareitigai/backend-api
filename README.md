@@ -10,7 +10,7 @@ This document provides instructions for setting up and running the backend serve
 ## Admin Panel
 
 - First paste `django-insecure-g9m2w@k8z$x7@e4v!t#h$2f&a5*p6n9c8q1r$x%w@j4m8s!l6k`
-  in https://backend-api-vpx2.onrender.com/api/docs/  `tokenAuth` (apiKey)
+  in https://backend-api-vpx2.onrender.com/api/docs/  `Token` (apiKey)
 
 - **Admin Panel** `https://backend-api-vpx2.onrender.com/admin/`
 
@@ -560,6 +560,11 @@ _These are used to populate dropdowns, filters, etc. in the frontend._
 |                     | /common/languages/                            | GET    | List of languages                            |
 |                     | /common/tour-types/                           | GET    | List of tour types                           |
 |                     | /common/timezones/                            | GET    | List of timezones                            |
+| Tour Management     | /partner/user/{user_id}/tours/create/         | POST   | Create new tour                              |
+|                     | /partner/user/{user_id}/tours/{tour_id}/update/ | PATCH | Update tour                              |
+|                     | /partner/user/{user_id}/tours/                 | GET    | Get all tours                                |
+|                     | /partner/user/{user_id}/tours/{tour_id}/       | GET    | Get tour details                             |
+|                     | /partner/scrape-tour-details/                   | POST   | Scrape URL and return data for editing      |
 | Admin Panel         | /admin/                                       | -      | Django admin                                 |
 
 ---

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 from django.utils.html import format_html
-from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking
+from .models import Partner, BusinessDetails, LocationCoverage, ToursServices, LegalBanking, Tour
 
 
 @admin.register(Partner)
@@ -313,3 +313,65 @@ class LegalBankingAdmin(ImportExportModelAdmin):
     get_file_preview.allow_tags = True
     get_detailed_file_preview.short_description = 'File Preview'
     get_detailed_file_preview.allow_tags = True
+
+
+@admin.register(Tour)
+class TourAdmin(ImportExportModelAdmin):
+    list_display = [
+        'id', 'partner', 'title', 'get_destinations', 'duration_days', 'duration_nights',
+        'tour_type', 'provider_name', 'starting_price', 'price_type', 'tour_status',
+        'visibility_score', 'created_at'
+    ]
+    list_filter = [
+        'tour_type', 'tour_status', 'price_type', 'includes_flights', 'includes_hotels',
+        'includes_meals', 'includes_transfers', 'visa_support', 'created_at'
+    ]
+    search_fields = [
+        'title', 'provider_name', 'partner__user__email', 'destinations',
+        'tour_start_location', 'tour_drop_location'
+    ]
+    ordering = ['-created_at']
+    list_per_page = 25
+    date_hierarchy = 'created_at'
+    readonly_fields = ['created_at', 'updated_at', 'visibility_score']
+    raw_id_fields = ['partner']
+    list_editable = ['tour_status', 'price_type']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('partner', 'tour_link', 'title', 'destinations', 'duration_days', 'duration_nights')
+        }),
+        ('Tour Details', {
+            'fields': ('tour_type', 'provider_name', 'contact_link', 'categories', 'tags', 'summary', 'highlights')
+        }),
+        ('Pricing & Schedule', {
+            'fields': ('starting_price', 'price_type', 'departure_cities', 'tour_start_location', 'tour_drop_location', 'departure_months')
+        }),
+        ('Status & Inclusions', {
+            'fields': ('tour_status', 'includes_flights', 'includes_hotels', 'includes_meals', 'includes_transfers', 'visa_support')
+        }),
+        ('Offers & Promotions', {
+            'fields': ('offers_type', 'discount_details', 'promotional_tagline'),
+            'classes': ('collapse',)
+        }),
+        ('Media & SEO', {
+            'fields': ('cover_image', 'visibility_score'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_destinations(self, obj):
+        if obj.destinations:
+            return ', '.join(obj.destinations)
+        return '-'
+    get_destinations.short_description = 'Destinations'
+    
+    def get_short_title(self, obj):
+        if len(obj.title) > 50:
+            return obj.title[:50] + '...'
+        return obj.title
+    get_short_title.short_description = 'Title'

@@ -12,10 +12,44 @@ from .serializers import (
     LocationCoverageSerializer, LocationCoverageResponseSerializer,
     ToursServicesSerializer, ToursServicesResponseSerializer,
     LegalBankingSerializer, LegalBankingResponseSerializer,
-    PartnerStatusSerializer, TourScrapingRequestSerializer, TourScrapingResponseSerializer, TourSerializer
+    PartnerStatusSerializer, TourScrapingRequestSerializer, TourScrapingResponseSerializer, 
+    TourSerializer, TourCreateSerializer, TourUpdateSerializer, TourListSerializer, 
+    TourDetailSerializer
 )
 from .utils import optimize_file_upload, log_performance_metric
 from .scraping_service import TourScrapingService
+from rest_framework import serializers
+
+# Create error response serializers
+class PartnerErrorResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=False)
+    message = serializers.CharField()
+
+class TourErrorResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=False)
+    message = serializers.CharField()
+    errors = serializers.DictField(required=False)
+
+class TourSuccessResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    message = serializers.CharField()
+    data = TourSerializer()
+
+class TourCreateResponseSerializer(serializers.Serializer):
+    """Serializer for tour creation response that includes request data."""
+    success = serializers.BooleanField(default=True)
+    message = serializers.CharField()
+    data = TourSerializer()
+    request_data = serializers.DictField(help_text="Original request data that was sent")
+
+class TourListResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = TourListSerializer(many=True)
+    count = serializers.IntegerField()
+
+class TourDetailResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = TourDetailSerializer()
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -485,7 +519,10 @@ def get_partner_status(request):
 
 
 @extend_schema(
-    responses={200: {'type': 'object', 'properties': {'success': {'type': 'boolean'}, 'message': {'type': 'string'}}}}
+    responses={
+        200: PartnerErrorResponseSerializer,
+        400: PartnerErrorResponseSerializer
+    }
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -510,67 +547,240 @@ def complete_onboarding(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST', 'PATCH'])
+@extend_schema(
+    request=TourCreateSerializer,
+    responses={
+        201: TourCreateResponseSerializer,
+        400: TourErrorResponseSerializer,
+        403: PartnerErrorResponseSerializer,
+        404: PartnerErrorResponseSerializer,
+        500: PartnerErrorResponseSerializer
+    },
+    description="Create a new tour for a verified partner. Requires comprehensive tour information including basic details, pricing, and inclusions.",
+    tags=["Tour Management"]
+)
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_or_update_tour(request, user_id):
-    """Create a new tour (POST) or update an existing tour (PATCH) for a verified partner."""
-    partner = get_verified_partner_by_user_id(user_id)
-    if not partner:
-        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
-    if request.method == 'POST':
-        serializer = TourSerializer(data=request.data)
+def create_tour(request, user_id):
+    """Create a new tour for a verified partner with comprehensive tour information."""
+    try:
+        partner = get_verified_partner_by_user_id(user_id)
+        if not partner:
+            return Response({
+                'success': False, 
+                'message': 'Partner not found or not verified.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Add user_id to request data for serializer
+        data = request.data.copy()
+        data['user_id'] = user_id
+        
+        serializer = TourCreateSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(partner=partner)
-            return Response({'success': True, 'data': serializer.data}, status=201)
-        return Response({'success': False, 'errors': serializer.errors}, status=400)
-    elif request.method == 'PATCH':
-        tour_id = request.data.get('id')
-        if not tour_id:
-            return Response({'success': False, 'message': 'Tour id is required for update.'}, status=400)
+            tour = serializer.save()
+            response_serializer = TourSerializer(tour)
+            return Response({
+                'success': True,
+                'message': 'Tour created successfully',
+                'data': response_serializer.data,
+                'request_data': request.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid tour data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        logger.error(f"Tour creation error: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(
+    request=TourUpdateSerializer,
+    responses={
+        200: TourSuccessResponseSerializer,
+        400: TourErrorResponseSerializer,
+        403: PartnerErrorResponseSerializer,
+        404: PartnerErrorResponseSerializer,
+        500: PartnerErrorResponseSerializer
+    },
+    description="Update an existing tour for a verified partner. All fields are optional for partial updates.",
+    tags=["Tour Management"]
+)
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_tour(request, user_id, tour_id):
+    """Update an existing tour for a verified partner with partial updates."""
+    try:
+        partner = get_verified_partner_by_user_id(user_id)
+        if not partner:
+            return Response({
+                'success': False, 
+                'message': 'Partner not found or not verified.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             tour = Tour.objects.get(id=tour_id, partner=partner)
         except Tour.DoesNotExist:
-            return Response({'success': False, 'message': 'Tour not found.'}, status=404)
-        serializer = TourSerializer(tour, data=request.data, partial=True)
+            return Response({
+                'success': False,
+                'message': 'Tour not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TourUpdateSerializer(tour, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'data': serializer.data}, status=200)
-        return Response({'success': False, 'errors': serializer.errors}, status=400)
+            tour = serializer.save()
+            response_serializer = TourSerializer(tour)
+            return Response({
+                'success': True,
+                'message': 'Tour updated successfully',
+                'data': response_serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'success': False,
+            'message': 'Invalid tour data provided',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        logger.error(f"Tour update error: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@extend_schema(
+    responses={
+        200: TourListResponseSerializer,
+        403: PartnerErrorResponseSerializer,
+        404: PartnerErrorResponseSerializer,
+        500: PartnerErrorResponseSerializer
+    },
+    description="Get all tours for a verified partner. Supports filtering by status and tour type.",
+    parameters=[
+        {
+            'name': 'status',
+            'in': 'query',
+            'description': 'Filter by tour status: Draft, Live, Archived',
+            'required': False,
+            'schema': {'type': 'string', 'enum': ['Draft', 'Live', 'Archived']}
+        },
+        {
+            'name': 'tour_type',
+            'in': 'query',
+            'description': 'Filter by tour type: FIT, Group, Customizable',
+            'required': False,
+            'schema': {'type': 'string', 'enum': ['FIT', 'Group', 'Customizable']}
+        }
+    ],
+    tags=["Tour Management"]
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_tours(request, user_id):
-    """Get all tours for a verified partner."""
-    partner = get_verified_partner_by_user_id(user_id)
-    if not partner:
-        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
-    tours = Tour.objects.filter(partner=partner)
-    serializer = TourSerializer(tours, many=True)
-    return Response({'success': True, 'data': serializer.data}, status=200)
+    """Get all tours for a verified partner with optional filtering."""
+    try:
+        partner = get_verified_partner_by_user_id(user_id)
+        if not partner:
+            return Response({
+                'success': False, 
+                'message': 'Partner not found or not verified.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get query parameters for filtering
+        status_filter = request.query_params.get('status')
+        tour_type = request.query_params.get('tour_type')
+        
+        tours = Tour.objects.filter(partner=partner)
+        
+        # Apply filters
+        if status_filter:
+            tours = tours.filter(tour_status=status_filter)
+        if tour_type:
+            tours = tours.filter(tour_type=tour_type)
+        
+        # Order by creation date (newest first)
+        tours = tours.order_by('-created_at')
+        
+        serializer = TourListSerializer(tours, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'count': len(serializer.data)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Get all tours error: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@extend_schema(
+    responses={
+        200: TourDetailResponseSerializer,
+        403: PartnerErrorResponseSerializer,
+        404: PartnerErrorResponseSerializer,
+        500: PartnerErrorResponseSerializer
+    },
+    description="Get detailed information of a specific tour including all tour data and metadata.",
+    tags=["Tour Management"]
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_tour_details(request, user_id, tour_id):
-    """Get details of a specific tour for a verified partner."""
-    partner = get_verified_partner_by_user_id(user_id)
-    if not partner:
-        return Response({'success': False, 'message': 'Partner not found or not verified.'}, status=403)
+    """Get detailed information of a specific tour with complete tour data."""
     try:
-        tour = Tour.objects.get(id=tour_id, partner=partner)
-    except Tour.DoesNotExist:
-        return Response({'success': False, 'message': 'Tour not found.'}, status=404)
-    serializer = TourSerializer(tour)
-    return Response({'success': True, 'data': serializer.data}, status=200)
+        partner = get_verified_partner_by_user_id(user_id)
+        if not partner:
+            return Response({
+                'success': False, 
+                'message': 'Partner not found or not verified.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            tour = Tour.objects.get(id=tour_id, partner=partner)
+        except Tour.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Tour not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TourDetailSerializer(tour)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Get tour details error: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 
 @extend_schema(
     request=TourScrapingRequestSerializer,
-    responses={200: TourScrapingResponseSerializer}
+    responses={200: TourScrapingResponseSerializer},
+    description="Scrape tour details from a URL and return the extracted data for frontend editing.",
+    tags=["Tour Management"]
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def scrape_tour_details(request):
-    """Scrape tour details from a URL."""
+    """Scrape tour details from a URL and return the extracted data for frontend editing."""
     url = request.data.get('url')
     
     if not url:
@@ -596,8 +806,11 @@ def scrape_tour_details(request):
         if result.get('success'):
             return Response({
                 'success': True,
+                'message': 'Tour details extracted successfully',
                 'data': result['data'],
-                'message': 'Tour details extracted successfully'
+                'request_data': {
+                    'url': url
+                }
             }, status=status.HTTP_200_OK)
         else:
             return Response({
@@ -607,6 +820,7 @@ def scrape_tour_details(request):
             }, status=status.HTTP_400_BAD_REQUEST)
             
     except Exception as e:
+        logger.error(f"Scrape tour details error: {str(e)}")
         return Response({
             'success': False,
             'message': f'An error occurred while scraping: {str(e)}',
